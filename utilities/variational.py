@@ -41,9 +41,9 @@ class Minimizer:
                 params = kwargs.get("params",[0.01,1.])
                 number_hyp = kwargs.get("number_hyp",2)
                 self.observable = [cirq.Z.on(q) for q in translator.qubits]
-                self.loss = PerrLoss(discard_qubits=translator.env_qubits, number_hyp = number_hyp)
+                self.loss = PerrLoss(discard_qubits=translator.discard_qubits, number_hyp = number_hyp)
                 self.model_class = QNN_DISCRIMINATION
-                self.lower_bound_cost = compute_lower_bound_discrimination(params) 
+                self.lower_bound_cost = compute_lower_bound_discrimination(params)
 
                 self.target_preds = None ##this is to compute the cost
 

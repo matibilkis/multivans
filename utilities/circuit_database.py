@@ -15,6 +15,7 @@ class CirqTranslater:
         ### blocks that are fixed-structure (i.e. channels, state_preparation, etc.)
         untouchable_blocks = kwargs.get("untouchable_blocks",[])
         self.untouchable_blocks = untouchable_blocks
+        self.discard_qubits = kwargs.get("discard_qubits",[]) ###these are the qubits that you don't measure, i.e. environment
 
 
         #### keep a register on which integers corresponds to which CNOTS, target or control.
