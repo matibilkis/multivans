@@ -210,3 +210,8 @@ def max_diff(translator, c1, c2, matrix=False):
 
 def a_bt(a,b):
     return np.einsum('ij,jm->im',np.conjugate(a).T,b)
+
+
+def repeated_symbols(mcircuit):
+    ll=list(mcircuit["symbol"].dropna())
+    return len(ll) != len(set(ll))

@@ -130,3 +130,9 @@ class TimedStopping(tf.keras.callbacks.Callback):
             self.model.stop_training = True
             if self.verbose>0:
                 print('Stopping after %s seconds.' % self.seconds)
+
+
+def prepare_circuit_vqe(circuit_db):
+    trainable_symbols = translator.get_trainable_symbols(circuit_db)
+    trainable_param_values = translator.get_trainable_params_value(circuit_db)
+    return trainable_symbols, trainable_param_values

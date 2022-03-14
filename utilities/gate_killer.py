@@ -1,6 +1,6 @@
 import numpy as np
 from utilities.compiling import *
-from utilities.vqe import *
+from utilities.vqe import * #prepare_optimization_vqe ...
 from utilities.discrimination import *
 from utilities.misc import shift_symbols_down, qubit_get, get_qubits_involved, order_symbol_labels
 
@@ -28,7 +28,7 @@ class GateKiller:
             params = kwargs.get("params")
             number_hyp = kwargs.get("number_hyp",2)
             self.observable = [cirq.Z.on(q) for q in self.translator.qubits]
-            self.loss = PerrLoss(discard_qubits=self.translator.env_qubits, number_hyp = number_hyp)
+            self.loss = PerrLoss(discard_qubits=self.translator.discard_qubits, number_hyp = number_hyp)
             self.model_class = QNN_DISCRIMINATION
             self.discrimination_params = params
 
@@ -115,8 +115,15 @@ class GateKiller:
                 # except Exception: ###it happened in the past that the circuit was too short. TO do, solve this in a more elegant way.
                 #     killed_costs.append(np.inf)
                 #     print("problem in unitary killer, index_candidate {}".format(index_candidate))
+            elif self.model_class.__name__ == "QNN_VQE":
+                survival_symbols, survival_params_value = prepare_optimization_vqe(self.translator, killed_circuit_db)
+                unitary_killer_model = self.model_class(symbols=survival_symbols, observable=self.observable)
+                #try:
+                unitary_killer_model(killed_batch_circuits)
+                unitary_killer_model.trainable_variables[0].assign(tf.convert_to_tensor(survival_params_value.astype(np.float32)))
+                killed_costs.append(self.give_cost_external_model(killed_batch_circuits, model=unitary_killer_model).numpy())
             else:
-                raise NotImplementedError("...")
+                raise NonImplementedError("ups")
 
 
         relative_increments = (np.array(killed_costs)-initial_cost)/np.abs(initial_cost)

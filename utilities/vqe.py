@@ -30,6 +30,10 @@ def compute_lower_bound_cost_vqe(minimizer):
     print("computing ground state energy...")
     return np.real(np.min(np.linalg.eigvals(sum(minimizer.observable).matrix())))
 
+def prepare_optimization_vqe(translator, circuit_db):
+    trainable_symbols = translator.get_trainable_symbols(circuit_db)
+    trainable_param_values = translator.get_trainable_params_value(circuit_db)
+    return trainable_symbols, trainable_param_values
 
 class QNN_VQE(tf.keras.Model):
     def __init__(self, symbols, observable, batch_sizes=1):

@@ -13,7 +13,7 @@ class IdInserter:
 
         self.n_qubits = n_qubits
         self.touchable_qubits = list(range(n_qubits))
-        
+
         for q in untouchable_qubits:
             self.touchable_qubits.remove(q)
 
@@ -62,7 +62,7 @@ class IdInserter:
         cnot = self.cnots_index[str([q1,q2])] #q1 control q2 target
         return [cnot, rzq1, rxq1, rzq1, rxq2, rzq2, rxq2, cnot]
 
-    def insert_many_mutations(self, circuit_db, mutation_rate=1):
+    def mutate(self, circuit_db, mutation_rate=1):
         ngates = np.random.exponential(scale=mutation_rate)
         nmutations = int(ngates+1)
         m_circuit_db = self.inserter(circuit_db)
