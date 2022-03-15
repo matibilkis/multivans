@@ -103,20 +103,25 @@ def get_qubits_involved(circuit, circuit_db):
     qubits_involved = list(set(qubits_involved)) #this gives you the set ordered
     return qubits_involved
 
-def gate_counter_on_qubits(translator, circuit_db):
+def gate_counter_on_qubits(translator, circuit_db, untouchable_qubits = []):
     """
     Gives gate count for each qbit. First entry rotations, second CNOTS
     """
 
-    ngates = {k:[0,0] for k in range(translator.n_qubits)}
+    touchable_qubits = list(range(translator.n_qubits))
+    for q in untouchable_qubits:
+        touchable_qubits.remove(q)
+    ngates = {k:[0,0] for k in touchable_qubits}
     for ind in circuit_db["ind"]:
         if ind < translator.number_of_cnots:
             control, target = translator.indexed_cnots[str(ind)]
-            ngates[control][1]+=1
-            ngates[target][1]+=1
+            if (control in touchable_qubits) and (target in touchable_qubits):
+                ngates[control][1]+=1
+                ngates[target][1]+=1
         else:
             qind = (ind-translator.number_of_cnots)%translator.n_qubits
-            ngates[qind][0]+=1
+            if qind in touchable_qubits:
+                ngates[qind][0]+=1
     return np.array(list(ngates.values()))
 
 

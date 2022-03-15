@@ -74,7 +74,7 @@ class GateKiller:
             print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
             if killed is False:
                 break
-        return circuit_db, new_cost
+        return circuit_db, new_cost, murder_attempt
 
     def kill_one_unitary(self, initial_cost, circuit_db):
 

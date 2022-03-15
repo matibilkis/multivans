@@ -7,32 +7,33 @@ import tensorflow_quantum as tfq
 import tensorflow as tf
 
 
-#### channel discrimination ###s
-def channel_circuits(translator, circuit_db, etas):
+#### amplitude damping channel discrimination ###s
+def prepare_optimization_discrimination(translator, circuit_db, ets, unresolved=True):
+    """
+    retrieves batched circuits that are input to the QML model
+    """
+    batch_circuits, batch_circuits_db = channel_circuits(translator, circuit_db, ets ,unresolved=unresolved)
+    trainable_symbols = translator.get_trainable_symbols(batch_circuits_db[0])
+    trainable_params_value = translator.get_trainable_params_value(circuit_db)
+    return batch_circuits, trainable_symbols, trainable_params_value
+
+def channel_circuits(translator, circuit_db, etas, unresolved=True):
     batch_circuits = []
     batch_circuits_db = []
     for eta in etas:
-        c, cdb = change_channel_circuit(translator, circuit_db, eta)
+        c, cdb = change_channel_circuit(translator, circuit_db, eta, unresolved=unresolved)
         batch_circuits.append(c)
         batch_circuits_db.append(cdb)
     return batch_circuits, batch_circuits_db
 
-def change_channel_circuit(translator, circuit_db, new_eta):
-
+def change_channel_circuit(translator, circuit_db, new_eta, unresolved=True):
     new_channel_params = [new_eta]*2
     circuit_db1 = circuit_db.copy()
     channel_params = circuit_db["param_value"][circuit_db["channel_param"]==True]
     channel_params.update({i: val for i,val in zip(channel_params.index, new_channel_params)})
     circuit_db1.update(channel_params)
-    circuit1, circuit_db1 = translator.give_circuit(circuit_db1, unresolved=True)
+    circuit1, circuit_db1 = translator.give_circuit(circuit_db1, unresolved=unresolved)
     return circuit1, circuit_db1
-
-
-def prepare_optimization_discrimination(translator, circuit_db, ets):
-    batch_circuits, batch_circuits_db = channel_circuits(translator, circuit_db, ets )
-    trainable_symbols = translator.get_trainable_symbols(batch_circuits_db[0])
-    trainable_params_value = translator.get_trainable_params_value(circuit_db)
-    return batch_circuits, trainable_symbols, trainable_params_value
 
 def compute_lower_bound_discrimination(params):
     return sdp_channel_disc(params)

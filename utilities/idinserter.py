@@ -12,6 +12,7 @@ class IdInserter:
                 noise_in_rotations=1e-2):
 
         self.n_qubits = n_qubits
+        self.untouchable_qubits = untouchable_qubits
         self.touchable_qubits = list(range(n_qubits))
 
         for q in untouchable_qubits:
@@ -20,6 +21,7 @@ class IdInserter:
         self.spread_CNOTs = spread_CNOTs
         if isinstance(untouchable_blocks, int):
             untouchable_blocks = [untouchable_blocks]
+
         self.untouchable_blocks = untouchable_blocks
         self.choose_qubit_Temperature = choose_qubit_Temperature
         self.noise_in_rotations = noise_in_rotations
@@ -68,7 +70,7 @@ class IdInserter:
         m_circuit_db = self.inserter(circuit_db)
         for ll in range(nmutations-1):
             m_circuit_db = self.inserter(m_circuit_db)
-        return m_circuit_db
+        return m_circuit_db, nmutations
 
     def inserter(self, circuit_db):
         """
@@ -81,7 +83,7 @@ class IdInserter:
 
         ### which qubit(s) will be touched by the new insertion ?
         ## count how many (rotations, CNOTS) acting on each qubit (rows)
-        ngates = gate_counter_on_qubits(self,circuit_db)
+        ngates = gate_counter_on_qubits(self,circuit_db, untouchable_qubits=self.untouchable_qubits)
         ngates_CNOT = ngates[:,1] ##number of CNOTs on each qubit
         qubits_not_CNOT = np.where(ngates_CNOT == 0)[0] ### target qubits are chosen later
         if (self.spread_CNOTs is True) and (len(qubits_not_cnot) == 0):

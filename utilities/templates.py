@@ -136,14 +136,14 @@ def u2(translator, q0, q1):
 ### channels
 def amplitude_damping_db(translator, qubits_ind, eta, block_id=1, entire_circuit=False):
     """
-    qubits_ind: list of indices of the qubits ---> [system, ancilla]
+    qubits_ind: list of indices of the qubits ---> [system, ancilla (environment)]
     block_id: number that VANs uses to identify the channel and not touch it.
     eta: damping strength (note that the rotation is twice the value!)
     """
     channel = []
-    if not hasattr(translator, "env_qubits"):
+    if not hasattr(translator, "discard_qubits"):
         raise AttributeError("please specify environment qubits, just ot keep track of things. For instance, this is used in the minimizer")#translator.env_qubits = []
-    if qubits_ind[1] not in translator.env_qubits:
+    if qubits_ind[1] not in translator.discard_qubits:
         raise AttributeError("please check your env qubits & order in which qubits this template are called for, otherwise things can mess up.")
     if block_id not in translator.untouchable_blocks:
         raise AttributeError("please check your untouchable_blocks.")

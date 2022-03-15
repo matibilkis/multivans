@@ -87,12 +87,15 @@ class Evaluator(CirqTranslater):
         self.acceptance_percentage = min(self.initial_acceptance_percentage, self.acceptance_percentage*self.acceptance_reduction_rate)
         return
 
-    def add_step(self, database, cost,relevant=True):
+    def add_step(self, database, cost,relevant=True, **kwargs):
         """
         database: pandas db encoding circuit
         cost: cost at current iteration
         relevant: if cost was decreased on that step as compared to previous one(s)
         """
+        operation = kwargs.get("operation","variational")
+        history = kwargs.get("history",[])
+
         if self.lowest_cost is None:
             self.lowest_cost = cost
             self.its_without_improving = 0
@@ -109,8 +112,8 @@ class Evaluator(CirqTranslater):
 
         if self.lowest_cost <= self.lower_bound:
             self.end_vans = True
-        self.raw_history[len(list(self.raw_history.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage]
+        self.raw_history[len(list(self.raw_history.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage, operation, history]
         if relevant == True:
-            self.evolution[len(list(self.evolution.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage]
+            self.evolution[len(list(self.evolution.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage, operation, history]
         self.save_dicts_and_displaying()
         return

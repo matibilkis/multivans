@@ -24,6 +24,8 @@ class Simplifier:
             rule_6 move to left or move to right (just try both and see which leads to simplification), that'd be actually a (controlled) rule_7
             rule_5: in the end I relabel everything with the order_symbol routine. does it apply to other rules as well ?
 
+    NOTE:
+            This won't work if you want intra-block simplification. Suppose you have encoder -channel - decoder. Then encoder and decoder should have different ids. Todo: allow for joint simplification of blocks
 
     """
 
@@ -72,16 +74,16 @@ class Simplifier:
         while simplified and cnt < self.max_cnt:
             ss = simplified_db.copy()
             simplified, simplified_circuit_db = rule(simplified_db, on_qubit_order, gates_on_qubit)
-            if check_symbols_ordered(simplified_circuit_db) is False:
-                simplified_db.to_csv("testing/data/dcl")
-                ss.to_csv("testing/data/dcl_prev")
-                raise AttributeError("ojo {}".format(rule))
+            # if check_symbols_ordered(simplified_circuit_db) is False:
+            #     simplified_db.to_csv("testing/data/dcl")
+            #     ss.to_csv("testing/data/dcl_prev")
+            #     raise AttributeError("ojo {}".format(rule))
             circuit, simplified_db = self.translator.give_circuit(simplified_circuit_db)
             gates_on_qubit, on_qubit_order = self.get_positional_dbs(circuit, simplified_db)
-            if simplified == True:
-                print("simplified using ",rule)
+            # if simplified == True:
+                # print("simplified using ",rule)
             cnt+=1
-            if cnt>int(self.max_cnt)/2:
+            if cnt>int(0.9*self.max_cnt):
                 print("hey, i'm still simplifying, cnt{}".format(cnt))
                 # print(rules)
         return cnt, simplified_db
