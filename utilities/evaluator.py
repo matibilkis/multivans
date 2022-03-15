@@ -12,7 +12,8 @@ class Evaluator(CirqTranslater):
                 lowest_acceptance_percentage = 1e-4,
                 lower_bound_cost=-np.inf,
                 increase_acceptance_percentage_after_its = 5,
-                nrun=0):
+                nrun=0,
+                vans_its = 10):
         """
         This class evaluates the cost at each iteration, and decides whether to accept the new circuit or not.
 
@@ -47,6 +48,7 @@ class Evaluator(CirqTranslater):
         self.acceptance_reduction_rate = acceptance_reduction_rate
         self.lowest_acceptance_percentage = lowest_acceptance_percentage
         self.increase_acceptance_percentage_after_its = increase_acceptance_percentage_after_its
+        self.vans_its = vans_its
 
     def save_dicts_and_displaying(self):
         output = open(self.identifier+"/raw_history.pkl", "wb")
