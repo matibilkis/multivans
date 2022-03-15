@@ -6,17 +6,8 @@ from utilities.variational import Minimizer
 from utilities.circuit_database import CirqTranslater
 from utilities.templates import *
 from utilities.misc import kill_and_simplify
-import argparse
 
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--eta1", type=float, default=0.0)
-parser.add_argument("--eta2", type=float, default=1.)
-args = parser.parse_args()
-
-eta1 = args.eta1
-eta2 = args.eta2
-etas = [eta1,eta2]
-
+etas = [0.2,1.]
 translator = CirqTranslater(3, untouchable_blocks = [1], discard_qubits=[2])
 simplifier = Simplifier(translator)
 inserter = IdInserter(translator.n_qubits, untouchable_blocks=translator.untouchable_blocks, untouchable_qubits = [2])

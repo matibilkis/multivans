@@ -71,7 +71,7 @@ class GateKiller:
         for murder_attempt in range(number_of_gates):
             circuit_db, new_cost, killed = self.kill_one_unitary(first_cost, circuit_db)
             circuit_db = order_symbol_labels(circuit_db)
-            print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
+            # print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
             if killed is False:
                 break
         return circuit_db, new_cost, murder_attempt
@@ -127,6 +127,9 @@ class GateKiller:
 
 
         relative_increments = (np.array(killed_costs)-initial_cost)/np.abs(initial_cost)
+        if len(relative_increments) == 0:
+            return circuit_db, initial_cost, False
+
         if np.min(relative_increments) < self.max_relative_increment:
             pos_min = np.argmin(relative_increments)
             index_to_kill = candidates[pos_min]

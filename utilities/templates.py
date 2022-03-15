@@ -45,9 +45,19 @@ def u1_layer(translator, **kwargs):
         dd = concatenate_dbs([dd,u1_db(translator,i, block_id=block_id, params = params)])
     return dd
 
-def x_layer_db(translator, **kwargs):
+
+def x_layer(translator, **kwargs):
     block_id = kwargs.get("block_id",0)
-    xx = pd.DataFrame([gate_template(k, param_value=0.,block_id=block_id) for k in [translator.number_of_cnots + translator.n_qubits+j for j in range(translator.n_qubits)]])
+    params = kwargs.get("params",True)
+    qubits_ind = kwargs.get("qubits_ind",None)
+    if qubits_ind is None:
+        qubits_ind = list(range(translator.n_qubits))
+    def give_param(params):
+        if params is not True:
+            return None
+        else:
+            return np.random.normal(0,2*np.pi)
+    xx = pd.DataFrame([gate_template(k, param_value=0.,block_id=block_id, params=give_param(params)) for k in [translator.number_of_cnots + translator.n_qubits+j for j in qubits_ind]])
     return xx
 
 def z_layer_db(translator,**kwargs):

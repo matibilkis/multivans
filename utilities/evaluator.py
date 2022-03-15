@@ -13,7 +13,8 @@ class Evaluator(CirqTranslater):
                 lower_bound_cost=-np.inf,
                 increase_acceptance_percentage_after_its = 5,
                 nrun=0,
-                vans_its = 10):
+                vans_its = 30,
+                stopping_criteria = None):
         """
         This class evaluates the cost at each iteration, and decides whether to accept the new circuit or not.
 
@@ -25,6 +26,8 @@ class Evaluator(CirqTranslater):
         *** acceptance_percentage: up to which value an increase in relative energy is accepted or not
         *** path:
             get_def_path() or not
+
+        *** stopping criteria: relative error you will to accept.
         """
         super(Evaluator, self).__init__(n_qubits=args["n_qubits"])
 
@@ -33,8 +36,10 @@ class Evaluator(CirqTranslater):
         self.displaying={"information":"\n VAns started at {} \n".format(datetime.now())}
 
         self.lowest_cost = None
-        self.end_vans = False
         self.lower_bound = lower_bound_cost
+        self.stopping_criteria = stopping_criteria
+        if (self.lower_bound == -np.inf) and (self.stopping_criteria != None):
+            print("Careful, you have a stopping criteria but no lower bound on the cost")
         self.its_without_improving=0
 
         args["params"] = np.round(args["params"],2)
@@ -76,10 +81,14 @@ class Evaluator(CirqTranslater):
         """
         C: cost after some optimization (to be accepted or not).
         """
-        if self.lowest_cost is None: ###accept initial modification
-            return True
+        if self.stopping_criteria is False:
+            stop = False
         else:
-            return (C-self.lowest_cost)/np.abs(self.lowest_cost) < self.acceptance_percentage
+            stop = (C-self.lower_bound)/np.abs(self.lower_bound) <= self.stopping_criteria
+        if self.lowest_cost is None: ###accept initial modification
+            return True, stop
+        else:
+            return (C-self.lowest_cost)/np.abs(self.lowest_cost) < self.acceptance_percentage, stop
 
     def decrease_acceptance_range(self):
         self.acceptance_percentage = max(self.lowest_acceptance_percentage, self.acceptance_percentage/self.acceptance_reduction_rate)

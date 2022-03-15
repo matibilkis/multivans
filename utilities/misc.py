@@ -8,6 +8,21 @@ import signal
 from ast import literal_eval
 import pandas as pd
 
+
+def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 100):
+    killed_db, cost, murders = killer.remove_irrelevant_gates(initial_cost,cdb)
+    simplified_db, ns =  simplifier.reduce_circuit(killed_db)
+    ops = ns+murders
+    for it in range(max_rounds):
+        killed_db, cost, murders = killer.remove_irrelevant_gates(cost,simplified_db)
+        simplified_db, ns =  simplifier.reduce_circuit(killed_db)
+        ops += ns+murders
+        if (murders == 0):
+            break ###this means you enter a loop in the simplifier... 
+    return simplified_db, cost,ops
+
+
+
 def overlap(st1, st2):
     return np.dot(np.conjugate(st1), st2)
 
@@ -123,8 +138,6 @@ def gate_counter_on_qubits(translator, circuit_db, untouchable_qubits = []):
             if qind in touchable_qubits:
                 ngates[qind][0]+=1
     return np.array(list(ngates.values()))
-
-
 
 
 def get_symbol_number_from(insertion_index, circuit_db):
