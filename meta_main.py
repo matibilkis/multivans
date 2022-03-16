@@ -1,5 +1,5 @@
 import os
-import numpy
+import numpy as np
 
 ep = 0.01
 etas = np.arange(0,1+ep, ep)
