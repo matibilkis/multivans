@@ -1,0 +1,12 @@
+executable=subash.sh
+
+output = ../vans_jobs/outs/$(Process).out
+error = ../vans_jobs/errs/$(Process).err
+log = ../vans_jobs/logs/$(Process).log
+request_cpus = 1
+request_memory = 2 GB
+requirements= Has_avx == true
++flavour="expresso"
+
+#args=$(Process)
+queue args from inputs/inputs.csv
