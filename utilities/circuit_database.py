@@ -85,7 +85,6 @@ class CirqTranslater:
             if symbol_name is None:
                 symbol_name = "th_"+str(len(symbols))
                 circuit_db[gate_index]["symbol"] = symbol_name
-
             else:
                 if symbol_name in symbols:
                     print("warning, repeated symbol while constructing the circuit, see circuut_\n  symbol_name {}\n symbols {}\ncircuit_db {} \n\n\n".format(symbol_name, symbols, circuit_db))

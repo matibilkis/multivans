@@ -60,7 +60,7 @@ def x_layer(translator, **kwargs):
     xx = pd.DataFrame([gate_template(k, param_value=0.,block_id=block_id, params=give_param(params)) for k in [translator.number_of_cnots + translator.n_qubits+j for j in qubits_ind]])
     return xx
 
-def z_layer_db(translator,**kwargs):
+def z_layer(translator,**kwargs):
     block_id = kwargs.get("block_id",0)
     random_param = kwargs.get("block_id", True)
     random_param = lambda x: 0. if x is False else np.pi*np.random.random()
