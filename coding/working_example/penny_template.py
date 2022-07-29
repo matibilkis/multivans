@@ -3,7 +3,6 @@ from pennylane import numpy as np
 import pennylane as qml
 import pandas as pd
 import utilities.templates as templates
-import utilities.database as database
 
 
 class PennyLaneTranslator:
@@ -30,7 +29,7 @@ class PennyLaneTranslator:
         self.number_of_cnots = len(self.indexed_cnots)
         #
         self.cgates = {0:qml.RZ, 1: qml.RX, 2:qml.RY}
-        self.temp_circuit_db = {}
+
 
     def spit_gate(self,gate_id):
         ## the symbols are all elements we added but the very last one (added on the very previous line)
@@ -45,16 +44,17 @@ class PennyLaneTranslator:
             param_value = gate_id["param_value"]
             self.cgates[cgate_type](param_value,qubit)
 
-    def append_to_circuit(self,circuit_db, gate_id):
+    def append_to_circuit(self,gate_id):
         ## the symbols are all elements we added but the very last one (added on the very previous line)
         symbols = []
-        for j in [k["symbol"] for k in circuit_db.values()]:
+        for j in [k["symbol"] for k in self.circuit_db.values()]:
             if j != None:
                 symbols.append(j)
+
         ind = gate_id["ind"]
 
-        gate_index = len(list(circuit_db.keys()))
-        circuit_db[gate_index] = gate_id #this is the new item to add
+        gate_index = len(list(self.circuit_db.keys()))
+        self.circuit_db[gate_index] = gate_id #this is the new item to add
 
         if ind<self.number_of_cnots:
             qml.CNOT(self.indexed_cnots[str(ind)])
@@ -65,44 +65,33 @@ class PennyLaneTranslator:
             param_value = gate_id["param_value"]
             if symbol_name is None:
                 symbol_name = "th_"+str(len(symbols))
-                circuit_db[gate_index]["symbol"] = symbol_name
+                self.circuit_db[gate_index]["symbol"] = symbol_name
             else:
                 if symbol_name in symbols:
-                    print("Symbol repeated {}, {}".format(symbol_name, symbols))
+                    print("warning, repeated symbol while constructing the circuit, see circuut_\n  symbol_name {}\n symbols {}\ncircuit_db {} \n\n\n".format(symbol_name, symbols, self.circuit_db))
             self.cgates[cgate_type](param_value,qubit)
-        return circuit_db
+
+
 
     def give_circuit(self, dd,**kwargs):
         """
-
+        retrieves circuit from circuit_db. It is assumed that the order in which the symbols are labeled corresponds to order in which their gates are applied in the circuit.
+        If unresolved is False, the circuit is retrieved with the values of rotations (not by default, since we feed this to a TFQ model)
         """
         unresolved = kwargs.get("unresolved",True)
 
+
         dev = qml.device("default.qubit", wires=self.n_qubits)
-        ### TO-DO: CHECK INPUT COPY!
         @qml.qnode(dev)
-        def qnode(inputs, weights,**kwargs):
-            """
-            weights is a list of variables (automatic in penny-lane, here i feed [] so i don't update parameter values)
-            """
-
-#            db = kwargs.get("db",{})
-            self.db = {}
-            cinputs = inputs#.copy()
-            symbols = database.get_trainable_symbols(self,cinputs)
-            ww = {s:w for s,w in zip( symbols, weights)}
-            cinputs = database.update_circuit_db_param_values(self, cinputs, ww)
-
-            list_of_gate_ids = [templates.gate_template(**dict(cinputs.iloc[k])) for k in range(len(cinputs))]
-            for i,gate_id in enumerate(list_of_gate_ids):
-                self.db = self.append_to_circuit(self.db, gate_id)
+        def qnode(inputs, weights):
+            circuit, self.circuit_db = [],{}
+            list_of_gate_ids = [templates.gate_template(**dict(inputs.iloc[k])) for k in range(len(inputs))]
+            for gate_id in list_of_gate_ids:
+                self.append_to_circuit(gate_id)
             return [qml.expval(qml.PauliZ(k)) for k in range(self.n_qubits)]
 
-        #self.db = {}
-        circuit = qnode(dd, []) ##this creates the database; the weights are used as trainable variables # of optimization
-        circuit_db = pd.DataFrame.from_dict(self.db,orient="index")
-        self.db = circuit_db.copy()
-        self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
+        circuit = qnode(dd, 2)
+        circuit_db = pd.DataFrame.from_dict(self.circuit_db,orient="index")
         return qnode, circuit_db
 
 
@@ -143,71 +132,6 @@ class modelito(tf.keras.Model):
         self.cost_value.update_state(tf.cast(cost, tf.dtypes.DType(1)))
         self.lr_value.update_state(tf.cast(self.optimizer.lr, tf.dtypes.DType(1)))
         return {k.name:k.result() for k in self.metrics}
-
-
-
-
-
-class PennyModel(tf.keras.Model):
-    def __init__(self, translator,**kwargs):
-        super(PennyModel,self).__init__()
-
-        self.translator = translator
-
-        weight_shapes = {"weights": self.get_weights_shape()}
-        self.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=kwargs.get("lr",1e-2)))
-
-        dev = qml.device("default.qubit", wires=self.translator.n_qubits)
-        @qml.qnode(dev)
-        def qnode_keras(inputs, weights):
-            """ I don't use inputs at all. Weights are trainable variables """
-            cinputs = self.translator.db_train
-            symbols = database.get_trainable_symbols(self.translator,cinputs)
-            ww = {s:w for s,w in zip( symbols, weights)}
-            cinputs = database.update_circuit_db_param_values(self.translator, cinputs, ww)
-            list_of_gate_ids = [templates.gate_template(**dict(cinputs.iloc[k])) for k in range(len(cinputs))]
-            db = {} ###nobody cares about db here
-            for i,gate_id in enumerate(list_of_gate_ids):
-                db = self.translator.append_to_circuit(db, gate_id)
-            return [qml.expval(qml.PauliZ(k)) for k in range(translator.n_qubits)]
-
-        self.qlayer = qml.qnn.KerasLayer(qnode_keras, weight_shapes, output_dim=self.translator.n_qubits)
-
-        self.cost_value = Metrica(name="cost")
-        self.lr_value = Metrica(name="lr")
-        self.gradient_norm = Metrica(name="grad_norm")
-
-    def get_weights_shape(self):
-        return len(database.get_trainable_symbols(self.translator,self.translator.db_train))
-
-    @property
-    def metrics(self):
-        return [self.cost_value, self.lr_value,self.gradient_norm]
-
-    def call(self, inputs):
-        """Very important!!!
-        I assume inputs is circuit_db """
-        self.translator.db_train = inputs
-        return self.qlayer([])
-
-    def train_step(self, data):
-        #x,y = data
-        x = self.translator.db_train
-        with tf.GradientTape() as tape:
-            tape.watch(self.trainable_variables)
-            cost = tf.math.reduce_sum(self(x))
-        grads=tape.gradient(cost, self.trainable_variables)
-        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
-
-        gnorm = tf.reduce_sum(tf.pow(grads[0],2))#,)
-
-        self.gradient_norm.update_state(tf.cast(gnorm, tf.dtypes.DType(1)))
-        self.cost_value.update_state(tf.cast(cost, tf.dtypes.DType(1)))
-        self.lr_value.update_state(tf.cast(self.optimizer.lr, tf.dtypes.DType(1)))
-        return {k.name:k.result() for k in self.metrics}
-
-
-
 
 
 

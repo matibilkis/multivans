@@ -25,7 +25,8 @@ def update_circuit_db_param_values(translator, circuit_db,symbol_to_value):
     """
     trianables = circuit_db[circuit_db["trainable"] == True]
     trainable_symbols = trianables[~trianables["symbol"].isna()]
-    circuit_db["param_value"].update({ind:val for ind, val in zip(trainable_symbols.index, symbol_to_value.values())})
+    if len(trainable_symbols) == len(symbol_to_value.values()):
+        circuit_db["param_value"].update({ind:val for ind, val in zip(trainable_symbols.index, symbol_to_value.values())})
     return circuit_db
 
 def give_resolver(translator, circuit_db):
