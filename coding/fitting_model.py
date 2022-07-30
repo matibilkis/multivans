@@ -20,8 +20,6 @@ __, c = translator.give_circuit(circuit_db)
 
 pm = coding_template.PennyModel(translator)
 
-pm.train_step([translator.db_train]*2)
-
 pm.fit(x=[1.], y=[1.], epochs=10)
 
 
