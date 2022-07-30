@@ -1,3 +1,4 @@
+import numpy as np
 
 def get_trainable_symbols(translator, circuit_db):
     trainable_symbols = circuit_db[circuit_db["trainable"] == True]["symbol"]
@@ -33,3 +34,9 @@ def give_resolver(translator, circuit_db):
     trianables = circuit_db[circuit_db["trainable"] == True]
     trainable_symbols = trianables[~trianables["symbol"].isna()]
     return dict(trainable_symbols[["symbol","param_value"]].values)
+
+def correct_param_value_dtype(translator,db):
+    resTF = give_resolver(translator, db)
+    res = {k:vnp for k, vnp in zip(resTF.keys(), np.stack(resTF.values()))}
+    db = update_circuit_db_param_values(translator,db,res)
+    return db

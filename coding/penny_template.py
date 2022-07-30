@@ -157,7 +157,8 @@ class PennyModel(tf.keras.Model):
         weight_shapes = {"weights": self.get_weights_shape()}
         self.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=kwargs.get("lr",1e-2)))
 
-        dev = qml.device("default.qubit", wires=self.translator.n_qubits)
+        dev = qml.device("default.qubit", wires=self.translator.n_qubits, shots=kwargs.get("shots",None),)
+        dev.R_DTYPE = np.float32
         @qml.qnode(dev)
         def qnode_keras(inputs, weights):
             """ I don't use inputs at all. Weights are trainable variables """
@@ -192,7 +193,8 @@ class PennyModel(tf.keras.Model):
         x = self.translator.db_train
         with tf.GradientTape() as tape:
             tape.watch(self.trainable_variables)
-            cost = tf.math.reduce_sum(self(x))
+            cost = tf.cast(tf.math.reduce_sum(self(x)),tf.dtypes.DType(1))
+        
         grads=tape.gradient(cost, self.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
 
@@ -219,6 +221,6 @@ class Metrica(tf.keras.metrics.Metric):
 
     def result(self):
         return self.metric_variable
-    # 
+    #
     # def reset_states(self):
     #     self.metric_variable.assign(0.)
