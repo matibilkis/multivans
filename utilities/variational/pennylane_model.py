@@ -34,7 +34,7 @@ class PennyModel(tf.keras.Model):
         st = datetime.now()
         H=qml.Hamiltonian(list(self.h_coeffs),list(self.ops))
         hh = qml.utils.sparse_hamiltonian(H).toarray()
-        self.ground = np.min(np.linalg.eigvals(hh))
+        self.translator.ground = np.min(np.linalg.eigvals(hh))
         delt = np.round((datetime.now()-st).seconds,4)
         #print("computed ground energy in {}sec".format(delt))
         return
@@ -64,11 +64,16 @@ class PennyModel(tf.keras.Model):
         return [qml.expval(k) for k in self.obs]#*self.h_coeffs
 
     def variational(self,**kwargs):
+
+        if np.random.uniform() < kwargs.get("parameter_perturbation_wall", 1e-1):
+            perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.trainable_variables[0]))))
+            self.trainable_variables[0].assign(self.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(self.trainable_variables[0].shape[0]).astype(np.float32)))
+
         calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]
         history = self.fit(x=[1.], y=[1.], verbose=kwargs.get("verbose", 0),epochs=kwargs.get("epochs",100), callbacks=calls)
 
-        self.translator.db_train = database.correct_param_value_dtype(self.translator,self.translator.db_train) ##this corrects the dtpye (from tensorflow to np.float32) of param_values
         cost = self.give_cost(self.translator.db_train)
+        self.translator.db_train = database.correct_param_value_dtype(self.translator,self.translator.db_train) ##this corrects the dtpye (from tensorflow to np.float32) of param_values
 
         symbols = database.get_trainable_symbols(self.translator,self.translator.db_train)
         resolver = {s:w for s,w in zip( symbols, self.trainable_variables[0].numpy())}
@@ -86,10 +91,10 @@ class PennyModel(tf.keras.Model):
         self.weight_shapes = {"weights": wshape}
         self.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.lr))
 
-        self.dev = qml.device("default.qubit", wires=self.translator.n_qubits, shots=self.shots,)
+        self.dev = qml.device("default.qubit", wires=self.translator.n_qubits, shots=self.shots,)#.tf
         self.dev.R_DTYPE = np.float32
 
-        @qml.qnode(self.dev)
+        @qml.qnode(self.dev)#, diff_method="adjoint")#, interface="tf",,)
         def qnode_keras(inputs, weights):
             """ I don't use inputs at all. Weights are trainable variables """
             cinputs = self.translator.db_train

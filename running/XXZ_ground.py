@@ -38,7 +38,7 @@ grounds = []
 translator = penny_translator.PennyLaneTranslator(n_qubits = 4)
 for j in tqdm(js):
     model = penny_variational.PennyModel(translator,lr=0.1, shots=None, J=j)
-    grounds.append(model.ground)
+    grounds.append(model.translator.ground)
 plt.plot(js,grounds)
 
 

@@ -105,3 +105,14 @@ class PennyLaneTranslator:
         self.db = circuit_db.copy()
         self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
         return qnode, circuit_db
+
+    def initialize(self,**kwargs):
+        mode=kwargs.get("mode","x")
+        if mode=="x":
+            circuit_db = templates.x_layer(self)
+        elif mode=="u1":
+            circuit_db = templates.u1_layer(self)
+        else:
+            circuit_db = templates.u2_layer(self)
+        qnode, circuit_db = self.give_circuit(circuit_db)
+        return circuit_db
