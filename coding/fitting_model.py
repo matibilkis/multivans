@@ -23,12 +23,10 @@ __, c = translator.give_circuit(circuit_db)
 
 
 pm = coding_template.PennyModel(translator, lr=0.1, shots=100)
-
 pm.train_step([])
 
 
 history = pm.fit(x=[1.], y=[1.], epochs=200)
-
 translator.db_train = database.correct_param_value_dtype(translator,translator.db_train)
 
 plt.plot(history.history["cost"])

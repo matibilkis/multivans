@@ -1,4 +1,4 @@
-import numpy as np
+
 
 def get_trainable_symbols(translator, circuit_db):
     trainable_symbols = circuit_db[circuit_db["trainable"] == True]["symbol"]

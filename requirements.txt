@@ -1,2 +1,1 @@
-pandas==1.4.3
-pennylane==0.24.0
+datetime
