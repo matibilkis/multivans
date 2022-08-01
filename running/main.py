@@ -45,6 +45,7 @@ simplified_db = simplifier.reduce_circuit(translator.db_train)
 
 reload(penny_killer)
 
+
 pk = penny_killer.GateKiller(translator, translator_killer, lr=0.1, shots=100, g=g, J=J)
 pk.remove_irrelevant_gates(cost, circuit_db)
 pk.test_model(translator.db_train)

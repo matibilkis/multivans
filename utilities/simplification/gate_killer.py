@@ -90,11 +90,10 @@ class GateKiller:
             self.test_model.build_model()
             self.test_model(self.test_model.translator.db_train)
 
-            !!!? !!!? !!!
-            survival_symbols, survival_params_value = prepare_optimization_vqe(self.translator, killed_circuit_db)
+            survival_symbols, survival_params_value = database.get_trainable_symbols(self.test_translator,killed_circuit_db), database.get_trainable_params_value(self.test_translator,killed_circuit_db)
 
             self.test_model.trainable_variables[0].assign(tf.convert_to_tensor(survival_params_value.astype(np.float32)))
-            killed_costs.append(self.give_cost_external_model(killed_batch_circuits))
+            killed_costs.append(self.give_cost_external_model(killed_circuit_db))
 
         relative_increments = (np.array(killed_costs)-initial_cost)/np.abs(initial_cost)
         if len(relative_increments) == 0:
