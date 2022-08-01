@@ -18,9 +18,8 @@ def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 100):
         simplified_db, ns =  simplifier.reduce_circuit(killed_db)
         ops += ns+murders
         if (murders == 0):
-            break ###this means you enter a loop in the simplifier... 
+            break ###this means you enter a loop in the simplifier...
     return simplified_db, cost,ops
-
 
 
 def overlap(st1, st2):

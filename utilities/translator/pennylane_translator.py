@@ -87,7 +87,6 @@ class PennyLaneTranslator:
             weights is a list of variables (automatic in penny-lane, here i feed [] so i don't update parameter values)
             """
 
-#            db = kwargs.get("db",{})
             self.db = {}
             cinputs = inputs#.copy()
             symbols = database.get_trainable_symbols(self,cinputs)

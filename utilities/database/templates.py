@@ -107,6 +107,8 @@ def gate_template(ind,**kwargs):
     return dicti
 
 
+
+
 def rz(translator, q):
     return translator.number_of_cnots  + q
 def rx(translator, q):
