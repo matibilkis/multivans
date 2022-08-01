@@ -94,3 +94,10 @@ def check_rot(ind_gate, translator):
 
 def check_cnot(ind_gate, translator):
     return translator.number_of_cnots> ind_gate# <(3*translator.n_qubits + translator.number_of_cnots)
+
+
+
+### killer
+
+def qubit_get(x, translator):
+    return (x-translator.number_of_cnots)%translator.n_qubits

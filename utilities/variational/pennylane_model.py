@@ -6,6 +6,8 @@ from datetime import datetime
 import utilities.database.database as database
 import utilities.database.templates as templates
 from utilities.variational.misc import *
+import utilities.variational.pennylane_model as penny_variational
+
 
 
 class PennyModel(tf.keras.Model):
