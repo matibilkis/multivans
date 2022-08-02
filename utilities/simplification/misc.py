@@ -3,6 +3,20 @@ from ast import literal_eval
 import pandas as pd
 
 
+def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 100):
+    killed_db, cost, murders = killer.remove_irrelevant_gates(initial_cost,cdb)
+    simplified_db, ns =  simplifier.reduce_circuit(killed_db)
+    ops = ns+murders
+    for it in range(max_rounds):
+        killed_db, cost, murders = killer.remove_irrelevant_gates(cost,simplified_db)
+        simplified_db, ns =  simplifier.reduce_circuit(killed_db)
+        ops += ns+murders
+        if (murders == 0):
+            break ###this means you enter a loop in the simplifier...
+    return simplified_db, cost,ops
+
+
+
 def reindex_symbol(list_of_symbols, first_symbol_number):
     reindexed=[]
     for ind, sym in enumerate(list_of_symbols):

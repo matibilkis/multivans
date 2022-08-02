@@ -13,7 +13,6 @@ class PennyLane_Simplifier:
     """
     untouchable::: list of blocks which simplifier should not toch (for instance environment blocks), state preparation blocks, fixed measurement blocks, etc.
 
-
     rule_1: CNOT when control is |0> == identity.    RELATIVE
     rule_2: Two same CNOTS -> identity (delete both).   ABSOLUTE
     rule_3: Rz (|0>) ---> kill (only adds a phase killed tracing over, in case we are computing).   RELATIVE

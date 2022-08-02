@@ -33,6 +33,7 @@ class PennyLaneTranslator:
         self.cgates = {0:qml.RZ, 1: qml.RX, 2:qml.RY}
         self.temp_circuit_db = {}
 
+        self.initialize(mode=kwargs.get("initialize","u1"))
     def spit_gate(self,gate_id):
         ## the symbols are all elements we added but the very last one (added on the very previous line)
         ind = gate_id["ind"]
