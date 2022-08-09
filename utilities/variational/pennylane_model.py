@@ -73,7 +73,7 @@ class PennyModel(tf.keras.Model):
             self.trainable_variables[0].assign(self.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(self.trainable_variables[0].shape[0]).astype(np.float32)))
 
         calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]
-        history = self.fit(x=[1.], y=[1.], verbose=kwargs.get("verbose", 0),epochs=kwargs.get("epochs",100), callbacks=calls)
+        history = self.fit(x=[1.], y=[1.], verbose=kwargs.get("verbose", 0),epochs=kwargs.get("epochs",10), callbacks=calls)
 
         cost = self.give_cost(self.translator.db_train)
         self.translator.db_train = database.correct_param_value_dtype(self.translator,self.translator.db_train) ##this corrects the dtpye (from tensorflow to np.float32) of param_values
@@ -119,6 +119,11 @@ class PennyModel(tf.keras.Model):
         return self.qlayer([])
 
     def give_cost(self,data_base):
+        return tf.cast(tf.math.reduce_sum(self.h_coeffs*self(data_base)),tf.dtypes.DType(1))   #note that this is ruled by self.observable as well
+
+    def give_cost_external(self,data_base):
+        cdb, db = self.translator.give_circuit(data_base)
+        self.build_model()
         return tf.cast(tf.math.reduce_sum(self.h_coeffs*self(data_base)),tf.dtypes.DType(1))   #note that this is ruled by self.observable as well
 
     def train_step(self, data):
