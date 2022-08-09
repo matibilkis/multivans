@@ -66,6 +66,7 @@ class PennyModel(tf.keras.Model):
         return [qml.expval(k) for k in self.obs]#*self.h_coeffs
 
     def variational(self,**kwargs):
+        self.build_model()
 
         if np.random.uniform() < kwargs.get("parameter_perturbation_wall", 1e-1):
             perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.trainable_variables[0]))))

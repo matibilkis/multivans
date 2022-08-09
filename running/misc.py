@@ -3,3 +3,5 @@ class FakeArgs:
         self.problem = args["problem"]
         self.params = args["params"]
         self.nrun = args["nrun"]
+        self.shots = args["shots"]
+        self.epochs = args["epochs"]

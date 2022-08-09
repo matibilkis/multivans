@@ -65,6 +65,7 @@ class PennyLane_Simplifier:
                 blocked_circuit[block] = simplified_db[simplified_db["block_id"] == block]
         simplified_db = concatenate_dbs([sb for sb in blocked_circuit.values()])
         simplified_db = self.order_symbols(simplified_db) ## this is because from block to block there might be a gap in the symbols order!
+        sc, simplified_db = self.translator.give_circuit(simplified_db) ### and this is because I save current db to train inside translator..
         return simplified_db, nsimps
 
     def apply_rule(self, original_circuit_db, rule, **kwargs):

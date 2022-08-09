@@ -61,8 +61,8 @@ class PennyLaneTranslator:
         if ind<self.number_of_cnots:
             qml.CNOT(self.indexed_cnots[str(ind)])
         else:
-            cgate_type = (ind-self.number_of_cnots)%3
-            qubit = (ind-self.number_of_cnots)//self.n_qubits
+            cgate_type = (ind-self.number_of_cnots)//self.n_qubits
+            qubit = (ind-self.number_of_cnots)%self.n_qubits
             symbol_name = gate_id["symbol"]
             param_value = gate_id["param_value"]
             if symbol_name is None:
@@ -74,11 +74,14 @@ class PennyLaneTranslator:
             self.cgates[cgate_type](param_value,qubit)
         return circuit_db
 
+
+
     def give_circuit(self, dd,**kwargs):
         """
 
         """
         unresolved = kwargs.get("unresolved",True)
+        just_call = kwargs.get("just_call",False)
 
         dev = qml.device("default.qubit", wires=self.n_qubits)
         ### TO-DO: CHECK INPUT COPY!
@@ -102,8 +105,9 @@ class PennyLaneTranslator:
         #self.db = {}
         circuit = qnode(dd, []) ##this creates the database; the weights are used as trainable variables # of optimization
         circuit_db = pd.DataFrame.from_dict(self.db,orient="index")
-        self.db = circuit_db.copy()
-        self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
+        if just_call == False:
+            self.db = circuit_db.copy()
+            self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
         return qnode, circuit_db
 
     def initialize(self,**kwargs):
@@ -116,3 +120,7 @@ class PennyLaneTranslator:
             circuit_db = templates.u2_layer(self)
         qnode, circuit_db = self.give_circuit(circuit_db)
         return circuit_db
+
+    def draw(self, circuit_db):
+        circuit, circuit_db = self.give_circuit(circuit_db, just_call=True)
+        return print(qml.draw(circuit)(circuit_db, weights))

@@ -8,9 +8,11 @@ from utilities.simplification.misc import get_qubits_involved, reindex_symbol, s
 
 class IdInserter:
     def __init__(self,
-                n_qubits,**kwargs):
+                translator,
+                **kwargs):
 
-        self.n_qubits = n_qubits
+        self.translator = translator
+        n_qubits = self.n_qubits = translator.n_qubits
         self.spread_CNOTs=kwargs.get("spread_CNOTs",False)
         self.choose_qubit_Temperature = kwargs.get("choose_qubit_Temperature",0.)
         self.untouchable_blocks = kwargs.get("untouchable_blocks",[None])
@@ -128,4 +130,5 @@ class IdInserter:
                                                                             symbol="th_"+str(number_symbol_shifting), block_id=which_circuit_block)
                 m_circuit_db = m_circuit_db.sort_index().reset_index(drop=True)
                 m_circuit_db = shift_symbols_up(self, insertion_index + mind, m_circuit_db)
+        mcircuit, m_circuit_db = self.translator.give_circuit(m_circuit_db) ### this is because i save trainable db inside
         return m_circuit_db
