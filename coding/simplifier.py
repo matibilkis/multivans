@@ -41,7 +41,115 @@ db = database.concatenate_dbs([templates.x_layer(translator, params=True),templa
 c, cdb = translator.give_circuit(db)
 simplified_db = cdb.copy()
 
+import pennylane as qml
 
+
+def give_zyz(params,gates):
+    def circu(params, gates):
+        for p,g in zip(params,gates):
+            g(p,wires=0)
+        return [qml.PauliZ(wires=k) for k in range(1)]
+
+    global u_matrix
+    u_matrix = qml.matrix(circu)(params,gates)
+    def qfu():
+        qml.QubitUnitary(u_matrix,wires=0)
+        return qml.expval(qml.PauliZ(0))
+
+    dev = qml.device("default.qubit",wires=1)
+    qnode = qml.QNode(qfu, dev)
+
+    transformed_qfunc = qml.transforms.unitary_to_rot(qfu)
+    qq = qml.QNode(transformed_qfunc, dev)
+    qq()
+    rot = qq.tape.circuit[0]
+    return rot
+
+params = np.random.randn(4)*2*np.pi
+gates = [qml.RZ, qml.RX]*2
+give_zyz(params,gates)
+
+rot.compute_decomposition()
+
+rot.decomposition()
+
+qml.tape.get_active_tape(
+
+
+aa = qq.tape
+
+qml.tape.get_active_tape(aa)
+
+aa = qml.tape.get_active_tape(transformed_qfunc.tape)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+params = np.random.randn(4)*2*np.pi
+gates = [qml.RZ, qml.RX]*2
+def circu(params):
+    for p,g in zip(params,gates):
+        g(p,wires=0)
+    return [qml.PauliZ(wires=k) for k in range(1)]
+
+
+
+
+
+
+qml.matrix(circu)()
+
+params = np.random.randn(4)*2*np.pi
+gates = [qml.RZ, qml.RX]*2
+def circu(params):
+    for p,g in zip(params,[qml.RZ, qml.RX]*2):
+        g(p,wires=0)
+    return [qml.expval(qml.PauliZ(wires=k)) for k in range(1)]
+
+dev = qml.device("default.qubit",wires=1)
+qnode = qml.QNode(circu,dev)
+
+print(qml.draw(qnode)(params))
+
+opti = qml.transforms.merge_rotations(atol=1e-6)(circu)
+qnode1 = qml.QNode(opti, dev)
+print(qml.draw(qnode1)(params))
+
+
+u = qml.matrix(circu)(params)
+
+
+def qfu():
+    qml.QubitUnitary(u,wires=0)
+    return qml.expval(qml.PauliZ(0))
+
+
+dev = qml.device("default.qubit",wires=1)
+qnode = qml.QNode(qfu, dev)
+
+print(qml.draw(qnode, show_matrices=True)())
+transformed_qfunc = qml.transforms.unitary_to_rot(qfu)
+
+
+qml.drawer.tape_mpl(qnode.tape)
+qml.tape.get_active_tape(qnode.tape)
+
+
+
+qq = qml.QNode(transformed_qfunc, dev)
+
+qq.construct(qfu,)
 
 
 
