@@ -45,7 +45,7 @@ class GateKiller:
 
 
     def give_cost_external_model(self, circuit_db):
-        return self.test_model.give_cost(circuit_db)
+        return self.test_model.give_cost_external(circuit_db)
 
     def remove_irrelevant_gates(self,initial_cost, circuit_db):
         first_cost = initial_cost

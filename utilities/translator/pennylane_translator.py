@@ -30,7 +30,7 @@ class PennyLaneTranslator:
                     count += 1
         self.number_of_cnots = len(self.indexed_cnots)
         #
-        self.cgates = {0:qml.RZ, 1: qml.RX, 2:qml.RY}
+        self.cgates = {0:qml.RZ, 1: qml.RX, 2:qml.RY, 3:qml.Hadamard}
         self.temp_circuit_db = {}
 
         self.initialize(mode=kwargs.get("initialize","u1"))
@@ -71,7 +71,12 @@ class PennyLaneTranslator:
             else:
                 if symbol_name in symbols:
                     print("Symbol repeated {}, {}".format(symbol_name, symbols))
-            self.cgates[cgate_type](param_value,qubit)
+            if cgate_type < 3:
+                self.cgates[cgate_type](param_value,qubit)
+            else:
+                self.cgates[cgate_type](qubit)
+
+
         return circuit_db
 
 
@@ -123,4 +128,4 @@ class PennyLaneTranslator:
 
     def draw(self, circuit_db):
         circuit, circuit_db = self.give_circuit(circuit_db, just_call=True)
-        return print(qml.draw(circuit)(circuit_db, weights))
+        return print(qml.draw(circuit)(circuit_db, []))

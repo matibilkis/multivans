@@ -24,8 +24,8 @@ class PennyModel(tf.keras.Model):
         self.lr_value = Metrica(name="lr")
         self.gradient_norm = Metrica(name="grad_norm")
 
-        self.patience = kwargs.get("patience",200) #gradient descent iterations without any improvemente
-        self.max_time_training = kwargs.get("max_time_training",60) #max training time per minimization routine
+        self.patience = kwargs.get("patience",20) #gradient descent iterations without any improvemente
+        self.max_time_training = kwargs.get("max_time_training",30*self.translator.n_qubits) #max training time per minimization routine
 
         self.get_observable(**kwargs)
         self.get_ground()
@@ -44,6 +44,7 @@ class PennyModel(tf.keras.Model):
 
     def get_observable(self,**kwargs):
         H = kwargs.get("hamiltonian", "XXZ")
+        print(H)
         if H.upper() == "XXZ":
             g = kwargs.get("g", 1.)
             J = kwargs.get("J", 1.)
@@ -60,7 +61,10 @@ class PennyModel(tf.keras.Model):
             self.obs += [qml.PauliY(k%self.translator.n_qubits)@qml.PauliY((k+1)%self.translator.n_qubits) for k in range(self.translator.n_qubits)]
             self.h_coeffs += [1. for k in range(self.translator.n_qubits)]
             self.ops = self.obs.copy()
-
+        elif H.upper() == "Z":
+            self.obs = [qml.PauliZ(k) for k in range(self.translator.n_qubits)]
+            self.h_coeffs = [1. for k in range(self.translator.n_qubits)]
+            self.ops = self.obs.copy()
 
     def observable(self):
         return [qml.expval(k) for k in self.obs]#*self.h_coeffs
@@ -73,7 +77,7 @@ class PennyModel(tf.keras.Model):
             self.trainable_variables[0].assign(self.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(self.trainable_variables[0].shape[0]).astype(np.float32)))
 
         calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]
-        history = self.fit(x=[1.], y=[1.], verbose=kwargs.get("verbose", 0),epochs=kwargs.get("epochs",10), callbacks=calls)
+        history = self.fit(x=[1.], y=[1.], verbose=kwargs.get("verbose", 0),epochs=kwargs.get("epochs",100), callbacks=calls)
 
         cost = self.give_cost(self.translator.db_train)
         self.translator.db_train = database.correct_param_value_dtype(self.translator,self.translator.db_train) ##this corrects the dtpye (from tensorflow to np.float32) of param_values

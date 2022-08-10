@@ -50,12 +50,8 @@ def x_layer(translator, **kwargs):
     qubits_ind = kwargs.get("qubits_ind",None)
     if qubits_ind is None:
         qubits_ind = list(range(translator.n_qubits))
-    def give_param(params):
-        if params is not True:
-            return None
-        else:
-            return np.random.normal(0,2*np.pi)
-    xx = pd.DataFrame([gate_template(k, param_value=0.,block_id=block_id, params=give_param(params)) for k in [translator.number_of_cnots + translator.n_qubits+j for j in qubits_ind]])
+    random_param = lambda x: 0. if x is False else np.float32(np.pi*np.random.random())
+    xx = pd.DataFrame([gate_template(k, param_value=random_param(random_param),block_id=block_id) for k in [translator.number_of_cnots + translator.n_qubits+j for j in qubits_ind]])
     return xx
 
 def z_layer(translator,**kwargs):

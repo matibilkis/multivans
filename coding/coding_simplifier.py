@@ -7,7 +7,7 @@ from utilities.database.database import concatenate_dbs
 from utilities.simplification.misc import get_qubits_involved, reindex_symbol, shift_symbols_down, shift_symbols_up, type_get, check_rot, order_symbol_labels, check_cnot, check_symbols_ordered
 #from utilities.variational import Minimizer
 #from utilities.compiling import *
-import pandas as pd
+
 
 class PennyLane_Simplifier:
     """
@@ -380,28 +380,3 @@ class PennyLane_Simplifier:
                             simplified_db = order_symbol_labels(simplified_db)
                             break
         return simplification, simplified_db
-
-
-
-def construct_compiling_circuit(translator, target_u_db):
-    """
-    compiling single-qubit unitary (for the moment)
-
-    v_to_compile is a cirq.Circuit object (single-qubit for the moment)
-    """
-    #qubits = translator.qubits[:2]
-    #systems = qubits[:int(len(qubits)/2)]
-    #ancillas = qubits[int(len(qubits)/2):]
-
-    forward_bell = [translator.number_of_cnots + 3*translator.n_qubits + i for i in range(int(translator.n_qubits/2))]
-    forward_bell += [translator.cnots_index[str([k, k+int(translator.n_qubits/2)])] for k in range(int(translator.n_qubits/2))]
-    bell_db = pd.DataFrame([templates.gate_template(k, param_value=None, trainable=False) for k in forward_bell])
-
-    u1s = templates.u1_db(translator, 1, params=True)
-    target_u_db["trainable"] = False
-    #target_unitary_db = pd.DataFrame([gate_template(ind=-1, param_value = np.conjugate(v_to_compile), trainable=False, qubits=[1])])
-
-    backward_bell_db = bell_db[::-1]
-    id_comp = concatenate_dbs([bell_db,target_u_db, u1s, backward_bell_db])
-    comp_circ, comp_db = translator.give_circuit(id_comp)
-    return comp_circ, comp_db

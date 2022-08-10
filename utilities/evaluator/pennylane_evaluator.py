@@ -7,14 +7,7 @@ from utilities.evaluator.misc import get_def_path
 
 class PennyLaneEvaluator(PennyLaneTranslator):
     def __init__(self, args,
-                acceptance_percentage = 0.01,
-                acceptance_reduction_rate = 10,
-                lowest_acceptance_percentage = 1e-4,
-                lower_bound_cost=-np.inf,
-                increase_acceptance_percentage_after_its = 5,
-                nrun=0,
-                vans_its = 30,
-                stopping_criteria = None):
+                **kwargs):
         """
         This class evaluates the cost at each iteration, and decides whether to accept the new circuit or not.
 
@@ -31,29 +24,24 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         """
         super(PennyLaneEvaluator, self).__init__(n_qubits=args["n_qubits"])
 
+
         self.raw_history = {}
         self.evolution = {}
         self.displaying={"information":"\n VAns started at {} \n".format(datetime.now())}
 
         self.lowest_cost = None
-        self.lower_bound = lower_bound_cost
-        self.stopping_criteria = stopping_criteria
-        if (self.lower_bound == -np.inf) and (self.stopping_criteria != None):
-            print("Careful, you have a stopping criteria but no lower bound on the cost")
-        self.its_without_improving=0
+        self.lower_bound = kwargs.get("lower_bound", -np.inf)
 
         args["params"] = np.round(args["params"],2)
         self.args = args
-        self.identifier =  get_def_path() + "{}/{}/{}/".format(args["problem"],args["params"], nrun)
+        self.identifier =  get_def_path() + "{}/{}/{}/".format(args["problem"],args["params"], args["nrun"])
 
         os.makedirs(self.identifier, exist_ok=True)
 
-        self.initial_acceptance_percentage = acceptance_percentage
-        self.acceptance_percentage = acceptance_percentage
-        self.acceptance_reduction_rate = acceptance_reduction_rate
-        self.lowest_acceptance_percentage = lowest_acceptance_percentage
-        self.increase_acceptance_percentage_after_its = increase_acceptance_percentage_after_its
-        self.vans_its = vans_its
+        self.lowest_acceptance_percentage = kwargs.get("lowest_acceptance_percentage", 1e-4)
+        self.vans_its = kwargs.get("vans_its", 10)
+        self.acceptance_percentage = kwargs.get("self.acceptance_percentage", 1e-2)
+
 
     def save_dicts_and_displaying(self):
         output = open(self.identifier+"/raw_history.pkl", "wb")
@@ -77,26 +65,21 @@ class PennyLaneEvaluator(PennyLaneTranslator):
                 self.displaying = pickle.load(hhh)
         return
 
-    def accept_cost(self, C, decrease_only=True):
+    def accept_cost(self, C):
         """
         C: cost after some optimization (to be accepted or not).
         """
-        if self.stopping_criteria is False:
+        if self.lower_bound == -np.inf:
             stop = False
         else:
-            stop = (C-self.lower_bound)/np.abs(self.lower_bound) <= self.stopping_criteria
+            stop = (C - self.lower_bound)/np.abs(self.lower_bound) <= self.acceptance_percentage ## relative error up to 1e-2, i finish
+
         if self.lowest_cost is None: ###accept initial modification
             return True, stop
         else:
-            return (C-self.lowest_cost)/np.abs(self.lowest_cost) < self.acceptance_percentage, stop
+            return (C-self.lowest_cost)/np.abs(self.lowest_cost) <= self.acceptance_percentage, stop
 
-    def decrease_acceptance_range(self):
-        self.acceptance_percentage = max(self.lowest_acceptance_percentage, self.acceptance_percentage/self.acceptance_reduction_rate)
-        return
 
-    def increase_acceptance_range(self):
-        self.acceptance_percentage = min(self.initial_acceptance_percentage, self.acceptance_percentage*self.acceptance_reduction_rate)
-        return
 
     def add_step(self, database, cost,relevant=True, **kwargs):
         """
@@ -114,17 +97,27 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         elif cost < self.lowest_cost:
             self.lowest_cost = cost
             self.its_without_improving = 0
-            self.decrease_acceptance_range()
-
+            # self.decrease_acceptance_range()
         else:
             self.its_without_improving+=1
-            if self.its_without_improving > self.increase_acceptance_percentage_after_its:
-                self.increase_acceptance_range()
+            # if self.its_without_improving > self.increase_acceptance_percentage_after_its:
+            #     self.increase_acceptance_range()
 
         if self.lowest_cost <= self.lower_bound:
             self.end_vans = True
-        self.raw_history[len(list(self.raw_history.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage, operation, history]
+        self.raw_history[len(list(self.raw_history.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage , operation, history]
         if relevant == True:
             self.evolution[len(list(self.evolution.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage, operation, history]
         self.save_dicts_and_displaying()
         return
+
+
+### things not used
+
+# def decrease_acceptance_range(self):
+#     self.acceptance_percentage = max(self.lowest_acceptance_percentage, self.acceptance_percentage/self.acceptance_reduction_rate)
+#     return
+#
+# def increase_acceptance_range(self):
+#     self.acceptance_percentage = min(self.initial_acceptance_percentage, self.acceptance_percentage*self.acceptance_reduction_rate)
+#     return
