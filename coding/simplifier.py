@@ -68,10 +68,13 @@ def zyz(uu):
     return rot
 
 U = give_matrix()
+deco , [delta, alpha, th, beta] = u2zyz(U)
+np.linalg.det(U)
 
-U[0,0]
+U*np.exp(1j*)
 
-u2zyz(U)[0] -U
+
+
 
 def u2zyz(U):
     """
@@ -81,15 +84,14 @@ def u2zyz(U):
     th = 2*np.arccos(np.abs(U[0,0]))
     beta = np.angle(U[0,0]) - np.angle(U[0,1])
     delta = .5*(np.angle(U[0,0]) + np.angle(U[1,1]))
-    alpha = np.angle(U[0,1]) - np.angle(U[1,1])
-    #beta = np.angle(U[0,0]) - np.angle(U[1,0])
-    #alpha = np.angle(U[0,0]) - np.angle(U[1,0]) + np.pi
-    #delta = np.angle(U[0,0]) - .5*(alpha+beta)
+
+    alpha = np.angle(U[0,1]) - np.angle(U[1,1])# + f
 
     rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
     rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
     ry_th = np.array([[np.cos(th/2), np.sin(th/2)],[-np.sin(th/2), np.cos(th/2)]])
     r = np.exp(1j*delta)*rz_alpha.dot(ry_th).dot(rz_beta)
+    #r = rz_alpha.dot(ry_th).dot(rz_beta)
     return r, [delta, alpha, th, beta]
 
 def u2zxz(U):
@@ -105,9 +107,16 @@ def u2zxz(U):
     rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
     rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
     rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
-    r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
+    r = rz_alpha.dot(rx_th).dot(rz_beta)
+
     return r,[delta, alpha, th, beta]
 
+u2zxz(U)
+1j*U
+
+
+np.exp(1j*np.pi)
+np.exp(-1j*np.pi)
 
 
 
