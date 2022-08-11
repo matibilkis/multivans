@@ -92,35 +92,13 @@ def u2zyz(U):
     return r, [delta, alpha, th, beta]
 
 import scipy.stats as r
+
 p=[]
 for k in range(int(1e4)):
     uu = r.unitary_group.rvs(2)
     p.append(np.max(np.abs(u2zyz(uu)[0] - uu)))
 
 np.max(p)
-
-
-def u2zxz(U):
-    s = np.diag([1,1j])
-    ou = (s.conj().T).dot(U).dot(s)
-    _,[delta, alpha, th, beta]=u2zyz(ou)
-
-    rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
-    rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
-    rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
-    r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
-    return r
-
-
-
-p=[]
-for k in range(int(1e4)):
-    uu = r.unitary_group.rvs(2)
-    p.append(np.max(np.abs(u2zxz(uu) - uu)))
-
-np.max(p)
-
-
 
 
 u_ori
