@@ -75,7 +75,8 @@ u2zyz(U)[0] -U
 
 def u2zyz(U):
     """
-    U = e^i \delta RZ(\alpha) Ry(\theta) Rz(\beta)
+    U = e^i \delta RZ(\alpha) Ry(\theta) Rz(\beta) =
+    [[cos(th/2)e^{i (delta + alpha/2 + beta/2)}, sin(th/2)e^{i(delta + alpha/2 - \beta/2)}],[-sin(th/2)e^{delta - alpha/2 + beta/2}, cos(th/2)e^{\delta - \alpha/2 - \beta/2}]]
     """
     th = 2*np.arccos(np.abs(U[0,0]))
     beta = np.angle(U[0,0]) - np.angle(U[0,1])
@@ -91,16 +92,12 @@ def u2zyz(U):
     r = np.exp(1j*delta)*rz_alpha.dot(ry_th).dot(rz_beta)
     return r, [delta, alpha, th, beta]
 
-import scipy.stats as r
-p=[]
-for k in range(int(1e4)):
-    uu = r.unitary_group.rvs(2)
-    p.append(np.max(np.abs(u2zyz(uu)[0] - uu)))
-
-np.max(p)
-
-
 def u2zxz(U):
+    """
+    U = e^i \delta RZ(\alpha) RX(\theta) Rz(\beta)
+    returns U (decomposed as such, to check) and [\delta, \alpha, \theta, \beta].
+    note we just change of basis and apply zyz decomposition
+    """
     s = np.diag([1,1j])
     ou = (s.conj().T).dot(U).dot(s)
     _,[delta, alpha, th, beta]=u2zyz(ou)
@@ -109,7 +106,19 @@ def u2zxz(U):
     rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
     rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
     r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
-    return r
+    return r,[delta, alpha, th, beta]
+
+
+
+
+import scipy.stats as r
+p=[]
+for k in range(int(1e4)):
+    uu = r.unitary_group.rvs(2)
+    p.append(np.max(np.abs(u2zyz(uu)[0] - uu)))
+
+np.max(p)
+
 
 
 
