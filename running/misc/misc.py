@@ -5,3 +5,4 @@ class FakeArgs:
         self.nrun = args["nrun"]
         self.shots = args["shots"]
         self.epochs = args["epochs"]
+        self.n_qubits = args["n_qubits"]

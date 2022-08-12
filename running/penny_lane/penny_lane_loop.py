@@ -39,7 +39,7 @@ import utilities.simplification.gate_killer as penny_killer
 import utilities.database.database as database
 import utilities.database.templates as templates
 import utilities.mutator.idinserter as idinserter
-import running.misc as miscrun
+import running.misc.misc as miscrun
 import argparse
 import ast
 #import utilities.variational.tfq.variational as minimizer

@@ -17,25 +17,18 @@ class Minimizer:
     def __init__(self,
                 translator,
                 mode,
-                lr=0.01,
-                optimizer="adam",
-                epochs=1000,
-                patience=200,
-                max_time_continuous=120,
-                parameter_noise=0.01,
-                n_qubits = 2,
                 **kwargs):
 
-            ## training hyperparameters
-            self.lr = lr
+
             self.translator = translator
-            self.epochs = epochs
-            self.patience = patience
-            self.max_time_training = max_time_continuous
+            self.mode = mode ##VQE, DISCRIMINATION, COMPILING... (latter not sure if we can implement it now, that's why I coded everyhting again in pennylane)
+            ## training hyperparameters
+            self.lr = kwargs.get("lr", 0.01)
+            self.epochs=kwargs.get("epochs",5000)
+            self.patience = kwargs.get("patience",100)
+            self.max_time_training = kwargs.get("max_time_continuous",60)
             self.optimizer = tf.keras.optimizers.Adam(learning_rate = self.lr)
-            self.parameter_noise = parameter_noise
             self.minimization_step=0 #used for tensorboard
-            self.mode = mode
 
             if mode.upper() == "VQE":
                 hamiltonian = kwargs.get("hamiltonian")
@@ -67,6 +60,22 @@ class Minimizer:
                 self.lower_bound_cost = compute_lower_bound_cost_compiling(self) ## this will only work
                 self.target_preds = None ##this is to compute the cost
                 self.patience = 50 #don't wait too much
+            else:
+                raise Error("what about mode? {}",format(mode))
+            self.translator.ground = self.lower_bound_cost
+
+    def build_and_give_cost(self,circuit_db):
+        cc, cdb = self.translator.give_circuit(circuit_db, just_call=True)
+        trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
+
+        model = self.model_class(symbols=trainable_symbols, observable=self.observable, batch_sizes=1)
+
+        tfqcircuit = tfq.convert_to_tensor([cc])
+        model(tfqcircuit) #this defines the weigths
+        model.compile(optimizer=self.optimizer, loss=self.loss)
+        return self.loss(*[model(tfqcircuit)]*2)
+
+
 
     def give_cost_external_model(self, batched_circuit, model):
         return self.loss(*[model(batched_circuit)]*2) ###useful for unitary killer
@@ -80,7 +89,11 @@ class Minimizer:
         if self.mode.upper() == "DISCRIMINATION":
             batch_circuits, trainable_symbols, trainable_params_value = prepare_optimization_discrimination(self.translator, circuit_db, self.params, unresolved=False)
             return self.loss(*[self.model(batch_circuits)]*2)
-
+        elif self.mode.upper() == "VQE":
+            cc, cdb = self.translator.give_circuit(circuit_db, just_call=True)
+            batched_circuit = [cc]
+            trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
+            return self.loss(*[self.model(batched_circuit)]*2)
 
     def variational(self, circuit_db):
         """

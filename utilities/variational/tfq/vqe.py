@@ -106,5 +106,5 @@ class Metrica(tf.keras.metrics.Metric):
     def result(self):
         return self.metric_variable
 
-    def reset_states(self):
-        self.metric_variable.assign(0.)
+    # def reset_states(self):
+    #     self.metric_variable.assign(0.)

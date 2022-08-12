@@ -20,10 +20,6 @@ reload(minimizer)
 reload(vqe)
 
 
-resolver = database.give_resolver(translator,cdb)
-resol = cirq.resolve_parameters(cc,resolver)
-
-resol.unitary()
 
 translator = tfq_translator.TFQTranslator(n_qubits=10)
 tfq_minimizer = minimizer.Minimizer(translator,mode="VQE",hamiltonian="XXZ",params=[1.,.01])
@@ -31,8 +27,19 @@ db = translator.initialize(mode='u2')
 cc, cdb = tfq_minimizer.translator.give_circuit(db)
 tt = tfq_minimizer.variational(db)
 
+
+tfq_minimizer.build_and_give_cost(cdb)
+
+tfq_minimizer.give_cost(cdb)
+
+
 aa = translator.give_circuit(cdb, resolved=True)
 aa[0]
+
+
+tfq_minimizer.model(aa[0])
+
+tfq_minimizer.loss()
 
 
 
