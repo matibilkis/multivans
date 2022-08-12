@@ -44,7 +44,7 @@ g,J = params
 shots = convert_shorts(args.shots)
 epochs = args.epochs
 
-n_qubits = 2
+n_qubits = 5
 
 translator = penny_translator.PennyLaneTranslator(n_qubits = n_qubits, initialize="x")
 translator_killer = penny_translator.PennyLaneTranslator(n_qubits = translator.n_qubits, initialize="x")

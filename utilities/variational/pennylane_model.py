@@ -44,7 +44,7 @@ class PennyModel(tf.keras.Model):
 
     def get_observable(self,**kwargs):
         H = kwargs.get("hamiltonian", "XXZ")
-        print(H)
+        print("Generaing MODEL {} with kwargs... {}, {}".format(H, kwargs))
         if H.upper() == "XXZ":
             g = kwargs.get("g", 1.)
             J = kwargs.get("J", 1.)
