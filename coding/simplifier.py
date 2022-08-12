@@ -38,86 +38,27 @@ db = database.concatenate_dbs([templates.x_layer(translator, params=True),templa
 c, cdb = translator.give_circuit(db)
 simplified_db = cdb.copy()
 
-def give_matrix():
-    params = np.random.randn(8)*2*np.pi
-    gates = [qml.RZ, qml.RX]*4
+tt = penny_translator.PennyLaneTranslator(n_qubits = 1)
+__, cc = tt.give_circuit(templates.zxz_db(tt,0))
+tt.draw(cc)
 
+
+translator.draw(simplified_db)
+
+dev,_ = translator.give_circuit(simplified_db)
+qml.matrix(dev)(dev.func)
+qml.matrix(dev)(simplified_db,[])
+
+def give_matrix(params,gates):
     def circu(params, gates):
         for p,g in zip(params,gates):
             g(p,wires=0)
         return [qml.PauliZ(wires=k) for k in range(1)]
     ori_u=qml.matrix(circu)(params,gates)
     return ori_u
-c = np.array([[ 1-1j, -1-1j],[1-1j, 1+1j]])*.5
-cdag = np.conjugate(c.T)
 
 
-
-def zyz(uu):
-    def qfu(uu):
-        qml.QubitUnitary(uu,wires=0)
-        return qml.expval(qml.PauliZ(0))
-
-    dev = qml.device("default.qubit",wires=1)
-    qnode = qml.QNode(qfu, dev)
-
-    transformed_qfunc = qml.transforms.unitary_to_rot(qfu)
-    qq = qml.QNode(transformed_qfunc, dev)
-    qq(uu)
-    rot = qq.tape.circuit[0]
-    return rot
-
-
-
-deco , [delta, alpha, th, beta] = u2zyz(U)
-np.linalg.det(U)
-
-U
-u2zyz(U)
-
-
-
-def u2zyz(U):
-    """
-    U = e^i \delta RZ(\alpha) Ry(\theta) Rz(\beta) =
-    [[cos(th/2)e^{i (delta + alpha/2 + beta/2)}, sin(th/2)e^{i(delta + alpha/2 - \beta/2)}],[-sin(th/2)e^{delta - alpha/2 + beta/2}, cos(th/2)e^{\delta - \alpha/2 - \beta/2}]]
-    """
-    delta = .5*(np.angle(U[0,0]) + np.angle(U[1,1]))
-    if np.abs(delta)>1e-3:
-        UU = np.exp(-1j*delta)*U
-
-
-    th = 2*np.arccos(np.abs(U[0,0]))
-    beta = np.angle(U[0,0]) - np.angle(U[0,1])
-    delta = .5*(np.angle(U[0,0]) + np.angle(U[1,1]))
-    alpha = np.angle(U[0,1]) - np.angle(U[1,1])# + f
-
-    rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
-    rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
-    ry_th = np.array([[np.cos(th/2), np.sin(th/2)],[-np.sin(th/2), np.cos(th/2)]])
-    r = np.exp(1j*delta)*rz_alpha.dot(ry_th).dot(rz_beta)
-    #r = rz_alpha.dot(ry_th).dot(rz_beta)
-    return r, [delta, alpha, th, beta]
-
-def u2zxz(U):
-    """
-    U = e^i \delta RZ(\alpha) RX(\theta) Rz(\beta)
-    returns U (decomposed as such, to check) and [\delta, \alpha, \theta, \beta].
-    note we just change of basis and apply zyz decomposition
-    """
-    s = np.diag([1,1j])
-    ou = (s.conj().T).dot(U).dot(s)
-    _,[delta, alpha, th, beta]=u2zyz(ou)
-
-    rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
-    rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
-    rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
-    r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
-
-    return r,[delta, alpha, th, beta]
-
-
-def u2zxz_v2(U, with_phase=False):
+def u2zxz(U, with_phase=False):
     """
     U = e^i \delta RZ(\alpha) RX(\theta) Rz(\beta)
     returns U (decomposed as such, to check) and [\delta, \alpha, \theta, \beta].
@@ -130,15 +71,15 @@ def u2zxz_v2(U, with_phase=False):
     delta = .5*(np.angle(U[0,0]) + np.angle(U[1,1]))
     alpha = np.angle(U[0,1]) - np.angle(U[1,1]) + np.pi/2
 
-    rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
-    rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
-    rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
-    r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
+    if with_phase==False:
+        return [alpha,th, beta]
+    else:
+        rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
+        rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
+        rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
+        r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
 
-    return r,[delta, alpha, th, beta]
-
-U
-u2zxz_v2(U)
+        return r,[delta, alpha, th, beta]
 
 
 U = give_matrix()

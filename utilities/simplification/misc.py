@@ -115,3 +115,28 @@ def check_cnot(ind_gate, translator):
 
 def qubit_get(x, translator):
     return (x-translator.number_of_cnots)%translator.n_qubits
+
+
+
+def u2zxz(U, with_phase=False):
+    """
+    U = e^i \delta RZ(\alpha) RX(\theta) Rz(\beta)
+    returns U (decomposed as such, to check) and [\delta, \alpha, \theta, \beta].
+    note we just change of basis and apply zyz decomposition.
+
+    We won't be able to write, in general,
+    """
+    th = 2*np.arccos(np.abs(U[0,0]))
+    beta = np.angle(U[0,0]) - np.angle(U[0,1]) - np.pi/2
+    delta = .5*(np.angle(U[0,0]) + np.angle(U[1,1]))
+    alpha = np.angle(U[0,1]) - np.angle(U[1,1]) + np.pi/2
+
+    if with_phase==False:
+        return [alpha,th, beta]
+    else:
+        rz_alpha = np.diag([np.exp(1j*alpha/2), np.exp(-1j*alpha/2)])
+        rz_beta = np.diag([np.exp(1j*beta/2), np.exp(-1j*beta/2)])
+        rx_th = np.array([[np.cos(th/2), -1j*np.sin(th/2)],[-1j*np.sin(th/2), np.cos(th/2)]])
+        r = np.exp(1j*delta)*rz_alpha.dot(rx_th).dot(rz_beta)
+
+        return r,[delta, alpha, th, beta]

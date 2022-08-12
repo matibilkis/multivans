@@ -289,36 +289,18 @@ class PennyLane_Simplifier:
                                 break
                         if simplification == True:
                             indices_to_compile = [on_qubit_order[q][order_gate_on_qubit+k] for k in range(len(types))]
-                            self.translator_ = PennyLaner(n_qubits=2)
+                            self.translator_ = PennyLaner(n_qubits=1)
                             u_to_compile_db = simplified_db.loc[indices_to_compile]
                             u_to_compile_db["ind"] = self.translator_.n_qubits*type_get(u_to_compile_db["ind"], self.translator) + self.translator_.number_of_cnots
-                            u_to_compile_db["symbol"] = None ##just to be sure it makes no interference with the compiler...
 
-                            compile_circuit, compile_circuit_db = construct_compiling_circuit(self.translator_, u_to_compile_db)
-                            minimizer = Minimizer(self.translator_, mode="compiling", hamiltonian="Z")
+                            devi, u_to_compile_db = self.translator_.give_circuit(u_to_compile_db)
+                            target_u = qml.matrix(devi)(simplified_db,[])
 
-                            cost, resolver, history = minimizer.minimize([compile_circuit], symbols=self.translator.get_trainable_symbols(compile_circuit_db))
-
-                            OneQbit_translator = CirqTranslater(n_qubits=1)
-                            u1s = u1_db(OneQbit_translator, 0, params=True)
-                            u1s["param_value"] = -np.array(list(resolver.values()))
-                            resu_comp, resu_db = OneQbit_translator.give_circuit(u1s,unresolved=False)
-
-
-                            u_to_compile_db_1q = u_to_compile_db.copy()
-                            u_to_compile_db_1q["ind"] = u_to_compile_db["ind"] = type_get(u_to_compile_db["ind"], self.translator_)
-
-                            cc, cdb = OneQbit_translator.give_circuit(u_to_compile_db_1q, unresolved=False)
-                            c = cc.unitary()
-                            r = resu_comp.unitary()
-
-                            ## phase_shift if necessary
-                            if np.abs(np.mean(c/r) -1) > 1:
-                                u1s.loc[0] = u1s.loc[0].replace(to_replace=u1s["param_value"][0], value=u1s["param_value"][0] + 2*np.pi)# Rz(\th) = e^{-ii \theta \sigma_z / 2}c0, cdb0 = self.translator.give_circuit(pd.DataFrame([gate_template(0, param_value=2*np.pi)]), unresolved=False)
-                            resu_comp, resu_db = self.translator.give_circuit(u1s,unresolved=False)
+                            params = np.array(u2zxz(target_u))
+                            u1s = templates.zxz_db(OneQbit_translator, 0, params=True)
+                            u1s["param_value"] = params
 
                             first_symbols = simplified_db["symbol"][indices_to_compile][:3]
-
                             for new_ind, typ, pval in zip(indices_to_compile[:3],[0,1,0], list(u1s["param_value"])):
                                 simplified_db.loc[new_ind+0.1] = gate_template(self.translator.number_of_cnots + q + typ*self.translator.n_qubits,
                                                                                  param_value=pval, block_id=simplified_db.loc[new_ind]["block_id"],
@@ -330,8 +312,6 @@ class PennyLane_Simplifier:
                             simplified_db = simplified_db.sort_index().reset_index(drop=True)
                             killed_indices = indices_to_compile[3:]
                             db_follows = original_db[original_db.index>indices_to_compile[-1]]
-
-
                             simplified_db = self.order_symbols(simplified_db)
                             # if len(db_follows)>0:
                             #     gates_to_lower = list(db_follows.index)

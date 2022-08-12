@@ -25,6 +25,17 @@ def u1_db(translator,q,**kwargs):
             return np.random.normal(0,2*np.pi)
     return pd.DataFrame([gate_template(k, block_id=block_id, param_value = give_param(params,k)) for i,k in enumerate(u1(translator,q))])
 
+def zxz_db(translator,q,**kwargs):
+    block_id = kwargs.get("block_id",0)
+    params = kwargs.get("params",True)
+    inids_gates = list(translator.number_of_cnots + np.array([q+0*translator.n_qubits,q+1*translator.n_qubits,q+0*translator.n_qubits ]))
+    def give_param(params, k):
+        if params is not True:
+            return None
+        else:
+            return np.random.normal(0,2*np.pi)
+    return pd.DataFrame([gate_template(k, block_id=block_id, param_value = give_param(params,k)) for i,k in enumerate(inids_gates)])
+
 def u2_layer(translator,**kwargs):
     block_id = kwargs.get("block_id",0)
     dd = u2_db(translator,0,1)
