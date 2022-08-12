@@ -92,6 +92,15 @@ class Minimizer:
             cost, resolver, training_history = self.minimize(batch_circuits, symbols = trainable_symbols, parameter_values = trainable_params_value )
             optimized_circuit_db = self.translator.update_circuit_db_param_values(circuit_db, resolver)
             return optimized_circuit_db, [cost, resolver, training_history]
+        elif self.mode.upper() == "VQE":
+            cc, cdb = self.translator.give_circuit(circuit_db)
+            batched_circuit = [cc]
+
+            trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
+            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values )
+
+            optimized_circuit_db = database.update_circuit_db_param_values(self.translator,cdb, resolver)
+            return optimized_circuit_db, [cost, resolver, training_history]
 
 
     def minimize(self, batched_circuits, symbols, parameter_values=None, parameter_perturbation_wall=1):

@@ -21,15 +21,8 @@ class PennyLane_Simplifier:
     rule_5: compile 1-qubit gates into euler rotations.  ABSOLUTE
     rule_6: move cnots to the left, rotations to the right ABSOLUTE
 
-    TO DO:
-            CHECK loop_the_rules
-            check if doing more than one loop of the rules help (in general it should, a stopping condition should be written)
-            rule_6 move to left or move to right (just try both and see which leads to simplification), that'd be actually a (controlled) rule_7
-            rule_5: in the end I relabel everything with the order_symbol routine. does it apply to other rules as well ?
-
     NOTE:
-            This won't work if you want intra-block simplification. Suppose you have encoder -channel - decoder. Then encoder and decoder should have different ids. Todo: allow for joint simplification of blocks
-
+        we use pennylane to compile one-qubit unitary (we could do this by hand)
     """
 
     def __init__(self,translator, **kwargs):
