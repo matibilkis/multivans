@@ -1,4 +1,5 @@
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import os
 import sys
 sys.path.insert(0, os.getcwd())
@@ -29,14 +30,48 @@ reload(penny_translator)
 reload(miscrun)
 reload(idinserter)
 reload(penny_variational)
+reload(simplli)
 
 n_qubits = 4
-
 translator = penny_translator.PennyLaneTranslator(n_qubits = n_qubits, initialize="x")
 simplifier = simplli.PennyLane_Simplifier(translator)
 db = database.concatenate_dbs([templates.x_layer(translator, params=True),templates.z_layer(translator, params=True) ]*2)
 c, cdb = translator.give_circuit(db)
 simplified_db = cdb.copy()
+
+
+
+aa = simplifier.reduce_circuit(simplified_db)
+
+
+aa[0]
+
+translator.draw(aa[0])
+
+
+
+dd, cc = translator.give_circuit(aa[0])
+
+dd0, cc0 = translator.give_circuit(cdb)
+
+m1 = qml.matrix(dd)(cc,[])
+m0 = qml.matrix(dd0)(cdb,[])
+
+
+np.dot(m1[:,0], m0.conj().T[:,0])
+m0[:,0]
+
+
+
+gates_on_qubit, on_qubit_order = simplifier.get_positional_dbs(_,simplified_db)
+simplification, simplified_db = simplifier.rule_5(simplified_db, on_qubit_order, gates_on_qubit)
+
+
+
+
+_, dd = translator.give_circuit(simplified_db)
+
+
 
 tt = penny_translator.PennyLaneTranslator(n_qubits = 1)
 __, cc = tt.give_circuit(templates.zxz_db(tt,0))

@@ -71,7 +71,7 @@ class PennyModel(tf.keras.Model):
 
     def variational(self,**kwargs):
         self.build_model()
-
+        self.give_cost(self.translator.db_train) ###call model once, so i have trainable_variables
         if np.random.uniform() < kwargs.get("parameter_perturbation_wall", 1e-1):
             perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.trainable_variables[0]))))
             self.trainable_variables[0].assign(self.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(self.trainable_variables[0].shape[0]).astype(np.float32)))

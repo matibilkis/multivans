@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import os
 import sys
 sys.path.insert(0, os.getcwd())
@@ -41,7 +44,7 @@ g,J = params
 shots = convert_shorts(args.shots)
 epochs = args.epochs
 
-n_qubits = 3
+n_qubits = 2
 
 translator = penny_translator.PennyLaneTranslator(n_qubits = n_qubits, initialize="x")
 translator_killer = penny_translator.PennyLaneTranslator(n_qubits = translator.n_qubits, initialize="x")
@@ -50,7 +53,7 @@ simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = penny_killer.GateKiller(translator, translator_killer, lr=0.1, shots=shots, g=g, J=J)
 inserter = idinserter.IdInserter(translator)
 args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.nrun}
-evaluator = penny_evaluator.PennyLaneEvaluator(args=args_evaluator, lower_bound_cost=translator.ground, nrun=args.nrun, stopping_criteria=1e-3)
+evaluator = penny_evaluator.PennyLaneEvaluator(args=args_evaluator, lower_bound=translator.ground, nrun=args.nrun, stopping_criteria=1e-3)
 
 
 
@@ -92,3 +95,7 @@ for vans_it in range(evaluator.vans_its):
         print("ending VAns")
         print("\n final cost: {}\ntarget cost: {} \n\n\n\n".format(cost, evaluator.lower_bound))
         break
+translator.draw(circuit_db)
+
+
+evaluator.evolution[1]
