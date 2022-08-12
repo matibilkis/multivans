@@ -7,7 +7,7 @@ import utilities.database.database as database
 import utilities.database.templates as templates
 from utilities.variational.misc import *
 import utilities.variational.pennylane_model as penny_variational
-
+tf.keras.backend.set_floatx('float32')
 
 class PennyModel(tf.keras.Model):
     def __init__(self, translator,**kwargs):
