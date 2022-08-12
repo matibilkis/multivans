@@ -1,17 +1,24 @@
+
+"""
+This is VANs for pennyLane, but it works VERY slow as compared to TFQ
+"""
+
+
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-import sys
-sys.version
-
-import tensorflow as tf
-import tensorflow_quantum as tfq
-tf.__version__
-
-tfq.__version__
-import cirq
-cirq.__version__
+# import sys
+# sys.version
+#
+# import tensorflow as tf
+# import tensorflow_quantum as tfq
+# tf.__version__
+#
+# tfq.__version__
+# import cirq
+# cirq.__version__
 
 
 import os
