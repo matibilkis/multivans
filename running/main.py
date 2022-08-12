@@ -2,6 +2,16 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+import sys
+sys.version
+
+import tensorflow as tf
+import tensorflow_quantum as tfq
+tf.__version__
+
+
+
+
 import os
 import sys
 sys.path.insert(0, os.getcwd())
