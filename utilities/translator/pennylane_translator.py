@@ -90,7 +90,7 @@ class PennyLaneTranslator:
         unresolved = kwargs.get("unresolved",True)
         just_call = kwargs.get("just_call",False)
 
-        dev = qml.device(self.device_name, wires=self.n_qubits, simulator=cirq.Simulator())
+        dev = qml.device(self.device_name, wires=self.n_qubits)#, simulator=cirq.Simulator())
         ### TO-DO: CHECK INPUT COPY!
         @qml.qnode(dev)
         def qnode(inputs, weights,**kwargs):

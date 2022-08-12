@@ -9,7 +9,6 @@ from utilities.variational.misc import *
 import utilities.variational.pennylane_model as penny_variational
 
 
-import cirq
 class PennyModel(tf.keras.Model):
     def __init__(self, translator,**kwargs):
         super(PennyModel,self).__init__()
@@ -98,7 +97,7 @@ class PennyModel(tf.keras.Model):
         self.weight_shapes = {"weights": wshape}
         self.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.lr))
 
-        self.dev = qml.device(self.translator.device_name, wires=self.translator.n_qubits, shots=self.shots,simulator=cirq.Simulator())#.tf
+        self.dev = qml.device(self.translator.device_name, wires=self.translator.n_qubits, shots=self.shots)#.tf
         self.dev.R_DTYPE = np.float32
 
         @qml.qnode(self.dev)#, diff_method="adjoint")#, interface="tf",,)
