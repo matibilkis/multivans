@@ -75,7 +75,7 @@ class PennyModel(tf.keras.Model):
             perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.trainable_variables[0]))))
             self.trainable_variables[0].assign(self.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(self.trainable_variables[0].shape[0]).astype(np.float32)))
 
-        calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]
+        calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0, restore_best_weights=True),TimedStopping(seconds=self.max_time_training)]
         history = self.fit(x=[1.], y=[1.], verbose=kwargs.get("verbose", 0),epochs=kwargs.get("epochs",100), callbacks=calls)
 
         cost = self.give_cost(self.translator.db_train)

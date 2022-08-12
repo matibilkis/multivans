@@ -44,7 +44,7 @@ epochs = args.epochs
 n_qubits = 10
 
 
-translator = penny_translator.PennyLaneTranslator(n_qubits = n_qubits, initialize="x", device_name='qiskit.basicaer')#, backend='unitary_simulator')
+translator = penny_translator.PennyLaneTranslator(n_qubits = n_qubits, initialize="x", device_name='lightning.qubit')#'qiskit.basicaer')#, backend='unitary_simulator')
 translator_killer = penny_translator.PennyLaneTranslator(n_qubits = translator.n_qubits, initialize="x", device_name=translator.device_name)
 minimizer = penny_variational.PennyModel(translator,lr=0.1, shots=shots, g=g, J=J, patience=10)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)

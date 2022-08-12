@@ -21,30 +21,30 @@ import utilities.database.templates as templates
 import utilities.mutator.idinserter as idinserter
 import running.misc as miscrun
 import argparse
-import ast
+
+reload(penny_translator)
+reload(miscrun)
+reload(idinserter)
+reload(penny_variational)
 
 
-
-
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--problem", type=str, default="XXZ")
-parser.add_argument("--n_qubits", type=int, default=8)
-parser.add_argument("--params", type=str, default="[1., 1.1]")
-parser.add_argument("--nrun", type=int, default=0)
-parser.add_argument("--shots", type=int, default=0)
-parser.add_argument("--epochs", type=int, default=500)
-args = parser.parse_args()
+# parser = argparse.ArgumentParser(add_help=False)
+# parser.add_argument("--problem", type=str, default="XXZ")
+# parser.add_argument("--params", type=list, default=[1., 1.1])
+# parser.add_argument("--nrun", type=int, default=0)
+# parser.add_argument("--shots", type=int, default=0)
+# args = parser.parse_args()
 
 convert_shorts = lambda x: None if x==0 else x
-# args = {"problem":"XXZ", "params":[1.,.1],"nrun":0, "shots":0, "epochs":500}
-# args = miscrun.FakeArgs(args)
+args = {"problem":"XXZ", "params":[1.,.1],"nrun":0, "shots":0, "epochs":500}
+args = miscrun.FakeArgs(args)
 problem = args.problem
-params = ast.literal_eval(args.params)
+params = list(args.params)
 g,J = params
 shots = convert_shorts(args.shots)
 epochs = args.epochs
-n_qubits = args.n_qubits
 
+n_qubits = 5
 learning_rate=0.01
 
 translator = penny_translator.PennyLaneTranslator(n_qubits = n_qubits, initialize="x", device_name="forest.numpy_wavefunction")
