@@ -36,7 +36,13 @@ class Minimizer:
                 self.observable = give_observable_vqe(translator,hamiltonian, params)
                 self.loss = EnergyLoss()
                 self.model_class = QNN_VQE
-                self.lower_bound_cost = compute_lower_bound_cost_vqe(self) ## this will only work
+
+                lower_bound_cost = kwargs.get("lower_bound_cost",-np.inf)
+                if lower_bound_cost == -np.inf:
+                    self.lower_bound_cost = compute_lower_bound_cost_vqe(self) ## this will only work
+                else:
+                    self.lower_bound_cost = lower_bound_cost
+
                 self.target_preds = None ##this is to compute the cost
 
             elif mode.upper() == "DISCRIMINATION":
@@ -62,7 +68,9 @@ class Minimizer:
                 self.patience = 50 #don't wait too much
             else:
                 raise Error("what about mode? {}",format(mode))
-            self.translator.ground = self.lower_bound_cost
+            who = kwargs.get("who","minimizer")
+            if who == "minimizer":
+                self.translator.ground = self.lower_bound_cost
 
     def build_and_give_cost(self,circuit_db):
         cc, cdb = self.translator.give_circuit(circuit_db, just_call=True)

@@ -19,7 +19,7 @@ class GateKiller:
         self.translator = translator
         self.test_translator = translator_test
         #self.test_model = penny_variational.PennyModel(self.test_translator, **kwargs)
-        self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian="XXZ",params=[1.,.01])
+        self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian="XXZ",params=[1.,.01], lower_bound_cost=0., who="killer") #i don't care about this lower_bound_cost
 
         self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
 
