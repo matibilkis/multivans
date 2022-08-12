@@ -6,6 +6,8 @@ import pandas as pd
 import utilities.database.database as database
 import utilities.database.templates as templates
 
+import cirq
+
 
 class PennyLaneTranslator:
     def __init__(self, n_qubits, **kwargs):
@@ -16,7 +18,7 @@ class PennyLaneTranslator:
         untouchable_blocks = kwargs.get("untouchable_blocks",[])
         self.untouchable_blocks = untouchable_blocks
         self.discard_qubits = kwargs.get("discard_qubits",[]) ###these are the qubits that you don't measure, i.e. environment
-
+        self.device_name = kwargs.get("device_name","default.qubit")
 
         #### keep a register on which integers corresponds to which CNOTS, target or control.
         self.indexed_cnots = {}
@@ -88,7 +90,7 @@ class PennyLaneTranslator:
         unresolved = kwargs.get("unresolved",True)
         just_call = kwargs.get("just_call",False)
 
-        dev = qml.device("default.qubit", wires=self.n_qubits)
+        dev = qml.device(self.device_name, wires=self.n_qubits, simulator=cirq.Simulator())
         ### TO-DO: CHECK INPUT COPY!
         @qml.qnode(dev)
         def qnode(inputs, weights,**kwargs):

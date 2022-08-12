@@ -9,7 +9,7 @@ from utilities.variational.misc import *
 import utilities.variational.pennylane_model as penny_variational
 
 
-
+import cirq
 class PennyModel(tf.keras.Model):
     def __init__(self, translator,**kwargs):
         super(PennyModel,self).__init__()
@@ -44,7 +44,7 @@ class PennyModel(tf.keras.Model):
 
     def get_observable(self,**kwargs):
         H = kwargs.get("hamiltonian", "XXZ")
-        print("Generaing MODEL {} with kwargs... {}, {}".format(H, kwargs))
+        print("Generaing MODEL {} with kwargs... {}".format(H, kwargs))
         if H.upper() == "XXZ":
             g = kwargs.get("g", 1.)
             J = kwargs.get("J", 1.)
@@ -98,7 +98,7 @@ class PennyModel(tf.keras.Model):
         self.weight_shapes = {"weights": wshape}
         self.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=self.lr))
 
-        self.dev = qml.device("default.qubit", wires=self.translator.n_qubits, shots=self.shots,)#.tf
+        self.dev = qml.device(self.translator.device_name, wires=self.translator.n_qubits, shots=self.shots,simulator=cirq.Simulator())#.tf
         self.dev.R_DTYPE = np.float32
 
         @qml.qnode(self.dev)#, diff_method="adjoint")#, interface="tf",,)
@@ -123,13 +123,14 @@ class PennyModel(tf.keras.Model):
         return self.qlayer([])
 
     def give_cost(self,data_base):
-        return tf.cast(tf.math.reduce_sum(self.h_coeffs*self(data_base)),tf.dtypes.DType(1))   #note that this is ruled by self.observable as well
+        return tf.cast(tf.math.reduce_sum(self.h_coeffs*self(data_base)),tf.dtypes.DType(1.))   #note that this is ruled by self.observable as well
 
     def give_cost_external(self,data_base):
         cdb, db = self.translator.give_circuit(data_base)
         self.build_model()
         return tf.cast(tf.math.reduce_sum(self.h_coeffs*self(data_base)),tf.dtypes.DType(1))   #note that this is ruled by self.observable as well
 
+    #@tf.function
     def train_step(self, data):
         #x,y = data
         x = self.translator.db_train

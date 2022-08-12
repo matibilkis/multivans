@@ -7,7 +7,7 @@ from importlib import reload
 
 
 n_qubits = 2
-dev = qml.device("default.qubit", wires=n_qubits)
+dev = qml.device("default.qubit.tf", wires=n_qubits)
 
 @qml.qnode(dev)
 def qnode(inputs, weights_0, weight_1):

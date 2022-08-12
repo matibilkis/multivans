@@ -39,7 +39,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         os.makedirs(self.identifier, exist_ok=True)
 
         self.lowest_acceptance_percentage = kwargs.get("lowest_acceptance_percentage", 1e-4)
-        self.vans_its = kwargs.get("vans_its", 10)
+        self.vans_its = kwargs.get("vans_its", 100)
         self.acceptance_percentage = kwargs.get("self.acceptance_percentage", 1e-2)
 
 
