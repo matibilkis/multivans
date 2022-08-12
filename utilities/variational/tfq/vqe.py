@@ -1,19 +1,28 @@
+import tensorflow as tf
+import tensorflow_quantum as tfq
+import pandas as pd
+from datetime import datetime
+import utilities.database.database as database
+import utilities.database.templates as templates
+from utilities.variational.misc import *
+tf.keras.backend.set_floatx('float32')
+
+
 import cirq
-from utilities.sanity import check_params
 import tensorflow_quantum as tfq
 import tensorflow as tf
-import  numpy as np
+import numpy as np
 
 def give_observable_vqe(minimizer, hamiltonian, params):
     if hamiltonian.upper() == "TFIM":
-        check_params(params,2)
+        database.check_params(params,2)
         g, J = params
         observable = [-float(g)*cirq.Z.on(q) for q in minimizer.qubits]
         for q in range(len(minimizer.qubits)):
             observable.append(-float(J)*cirq.X.on(minimizer.qubits[q])*cirq.X.on(minimizer.qubits[(q+1)%len(minimizer.qubits)]))
         return observable
     elif hamiltonian.upper() == "XXZ":
-        check_params(params,2)
+        database.check_params(params,2)
         g, J = params
         observable = [float(g)*cirq.Z.on(q) for q in minimizer.qubits]
         for q in range(len(minimizer.qubits)):
@@ -31,8 +40,8 @@ def compute_lower_bound_cost_vqe(minimizer):
     return np.real(np.min(np.linalg.eigvals(sum(minimizer.observable).matrix())))
 
 def prepare_optimization_vqe(translator, circuit_db):
-    trainable_symbols = translator.get_trainable_symbols(circuit_db)
-    trainable_param_values = translator.get_trainable_params_value(circuit_db)
+    trainable_symbols = database.get_trainable_symbols(translator,circuit_db)
+    trainable_param_values = database.get_trainable_params_value(translator,circuit_db)
     return trainable_symbols, trainable_param_values
 
 class QNN_VQE(tf.keras.Model):

@@ -9,7 +9,9 @@ import tensorflow as tf
 import tensorflow_quantum as tfq
 tf.__version__
 
-
+tfq.__version__
+import cirq
+cirq.__version__
 
 
 import os

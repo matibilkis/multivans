@@ -52,3 +52,7 @@ def correct_param_value_dtype(translator,db):
     res = {k:vnp for k, vnp in zip(resTF.keys(), np.stack(resTF.values()))}
     db = update_circuit_db_param_values(translator,db,res)
     return db
+
+def check_params(params,length):
+    if len(params) != length:
+        raise ValueError("incorrect length of params")

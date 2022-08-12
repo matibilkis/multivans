@@ -1,60 +1,9 @@
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 import os
 import sys
 sys.path.insert(0, os.getcwd())
-import tensorflow as tf
-import tensorflow_quantum as tfq
 from importlib import reload
-import utilities.translator.tfq_translator as tfq_translator
-import utilities.variational.tfq.variational as minimizer
-import utilities.variational.tfq.vqe as vqe
-
-reload(tfq_translator)
-reload(minimizer)
-reload(vqe)
-
-
-translator = tfq_translator.TFQTranslator(n_qubits=10)
-minimizer = minimizer.Minimizer(translator,mode="VQE",hamiltonian="XXZ",params=[1.,.01])
-
-db = translator.initialize(mode='u1')
-trainable_symbols, trainable_param_values = vqe.prepare_optimization_vqe(translator, translator.db_train)
-
-model = minimizer.model_class(symbols = trainable_symbols, observable = minimizer.observable)
-
-
-model
-
-c, cdb = translator.give_circuit(db)
-
-qc = tfq.convert_to_tensor([c])
-
-
-model(qc)
-model.compile(optimizer=minimizer.optimizer, loss=minimizer.loss)
-
-history = model.fit(x=qc, y=tf.zeros((1,)),epochs=100,verbose=1)
-
-import matplotlib.pyplot as plt 
-
-plt.plot(history.history["cost"])
-
-}
-}
-
-circuit, circuit_db = translator.give_circuit(translator.db)
-
-
-
-
-
-
-
-
-
-
+import tensorflow as tf
 import matplotlib.pyplot as plt
 import pennylane as qml
 import numpy as np
