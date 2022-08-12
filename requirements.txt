@@ -1,1 +1,10 @@
+#installation instructions
+##TFQ ---> use https://github.com/tensorflow/quantum/blob/master/docs/install.md
+###works OK python3.8 3.9
+
+
 datetime
+tensorflow==2.7.0
+pennylane
+pennylane-forest
+tensorflow-quantum==0.7.2
