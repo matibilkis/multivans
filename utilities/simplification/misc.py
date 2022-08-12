@@ -3,7 +3,7 @@ from ast import literal_eval
 import pandas as pd
 
 
-def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 100):
+def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 1000):
     killed_db, cost, murders = killer.remove_irrelevant_gates(initial_cost,cdb)
     simplified_db, ns =  simplifier.reduce_circuit(killed_db)
     ops = ns+murders

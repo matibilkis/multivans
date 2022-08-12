@@ -42,12 +42,14 @@ parser.add_argument("--params", type=str, default="[1., 1.1]")
 parser.add_argument("--nrun", type=int, default=0)
 parser.add_argument("--shots", type=int, default=0)
 parser.add_argument("--epochs", type=int, default=500)
+parser.add_argument("--vans_its", type=int, default=200)
+
 args = parser.parse_args()
 
 
 start = datetime.now()
 
-# args = {"problem":"XXZ", "params":"[1.,.1]","nrun":0, "shots":0, "epochs":500, "n_qubits":10}
+# args = {"problem":"XXZ", "params":"[1.,.1]","nrun":0, "shots":0, "epochs":500, "n_qubits":10, "vans_its":200}
 # args = miscrun.FakeArgs(args)
 problem = args.problem
 params = ast.literal_eval(args.params)
@@ -55,7 +57,6 @@ g,J = params
 shots = miscrun.convert_shorts(args.shots)
 epochs = args.epochs
 n_qubits = args.n_qubits
-
 learning_rate=0.01
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x")#, device_name="forest.numpy_wavefunction")
@@ -67,7 +68,7 @@ simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, lr=learning_rate, shots=shots, g=g, J=J)
 inserter = idinserter.IdInserter(translator)
 args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.nrun}
-evaluator = tfq_evaluator.PennyLaneEvaluator(args=args_evaluator, lower_bound=translator.ground, nrun=args.nrun, stopping_criteria=1e-3)
+evaluator = tfq_evaluator.PennyLaneEvaluator(args=args_evaluator, lower_bound=translator.ground, nrun=args.nrun, stopping_criteria=1e-3, vans_its=args.vans_its)
 
 
 #### begin the algorithm
@@ -83,7 +84,7 @@ circuit, circuit_db = translator.give_circuit(minimized_db)
 
 for vans_it in range(evaluator.vans_its):
     print("vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
-    mutated_db, number_mutations = inserter.mutate(circuit_db)
+    mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=2)
     mutated_cost = minimizer.build_and_give_cost(mutated_db)
 
     evaluator.add_step(mutated_db, mutated_cost, relevant=False, operation="mutation", history = number_mutations)
