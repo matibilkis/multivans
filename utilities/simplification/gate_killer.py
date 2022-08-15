@@ -53,7 +53,7 @@ class GateKiller:
         for murder_attempt in range(number_of_gates):
             circuit_db, new_cost, killed = self.kill_one_unitary(first_cost, circuit_db)
             circuit_db = order_symbol_labels(circuit_db)
-            #print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
+            # print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
             if killed is False:
                 break
         return circuit_db, new_cost, murder_attempt
@@ -86,16 +86,19 @@ class GateKiller:
             killed_circuit_db = killed_circuit_db.drop(labels=[index_candidate])
             killed_circuit_db = shift_symbols_down(self.test_translator, index_candidate+1, killed_circuit_db)
 
-            self.test_translator.db_train = killed_circuit_db
-            self.test_model.build_model()
-            self.test_model(self.test_model.translator.db_train)
+            cost_killed = self.test_model.build_and_give_cost(killed_circuit_db)
+            killed_costs.append(cost_killed)
+            #self.test_translator.db_train = killed_circuit_db
+            #self.test_model.build_model()
+            #self.test_model(self.test_model.translator.db_train)#
 
-            survival_symbols, survival_params_value = database.get_trainable_symbols(self.test_translator,killed_circuit_db), database.get_trainable_params_value(self.test_translator,killed_circuit_db)
+            #survival_symbols, survival_params_value = database.get_trainable_symbols(self.test_translator,killed_circuit_db), database.get_trainable_params_value(self.test_translator,killed_circuit_db)
 
-            self.test_model.trainable_variables[0].assign(tf.convert_to_tensor(survival_params_value.astype(np.float32)))
-            killed_costs.append(self.give_cost_external_model(killed_circuit_db))
+            #self.test_model.trainable_variables[0].assign(tf.convert_to_tensor(survival_params_value.astype(np.float32)))
+            #killed_costs.append(self.give_cost_external_model(killed_circuit_db))
 
         relative_increments = (np.array(killed_costs)-initial_cost)/np.abs(initial_cost)
+        # print(relative_increments)
         if len(relative_increments) == 0:
             return circuit_db, initial_cost, False
 

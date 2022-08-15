@@ -17,7 +17,7 @@ class IdInserter:
         self.choose_qubit_Temperature = kwargs.get("choose_qubit_Temperature",0.)
         self.untouchable_blocks = kwargs.get("untouchable_blocks",[None])
         self.untouchable_qubits = kwargs.get("untouchable_qubits",[])
-        self.noise_in_rotations=kwargs.get("noise_in_rotations",1e-2)
+        self.noise_in_rotations=kwargs.get("noise_in_rotations",0.)
 
         self.touchable_qubits = list(range(n_qubits))
 
@@ -88,7 +88,7 @@ class IdInserter:
         ngates = gate_counter_on_qubits(self,circuit_db, untouchable_qubits=self.untouchable_qubits)
         ngates_CNOT = ngates[:,1] ##number of CNOTs on each qubit
         qubits_not_CNOT = np.where(ngates_CNOT == 0)[0] ### target qubits are chosen later
-        if (self.spread_CNOTs is True) and (len(qubits_not_cnot) == 0):
+        if (self.spread_CNOTs is True) and (len(qubits_not_CNOT) == 0):
             prob_rot_cnot = [.1,.9]
         else:
             prob_rot_cnot = [.5,.5]

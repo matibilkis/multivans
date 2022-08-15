@@ -33,8 +33,9 @@ from importlib import reload
 
 #
 reload(tfq_minimizer)
-reload(tfq_minimizer)
 reload(tfq_translator)
+reload(simplification_misc)
+reload(tfq_killer)
 reload(penny_simplifier)
 
 
@@ -52,8 +53,8 @@ args = parser.parse_args()
 
 start = datetime.now()
 
-# args = {"problem":"XXZ", "params":"[1.,.1]","nrun":0, "shots":0, "epochs":500, "n_qubits":10, "vans_its":200}
-# args = miscrun.FakeArgs(args)
+args = {"problem":"TFIM", "params":"[1.,1.]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200}
+args = miscrun.FakeArgs(args)
 problem = args.problem
 params = ast.literal_eval(args.params)
 g,J = params
@@ -75,12 +76,57 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(args=args_evaluator, lower_bound=tr
 
 
 #### begin the algorithm
-circuit_db = translator.initialize(mode="x")
-circuit, circuit_db = translator.give_circuit(translator.db_train)
+circuit_db = translator.initialize(mode="u2")
+#cdb = database.concatenate_dbs([templates.u1_layer(translator)]*2)
+circuit, circuit_db = translator.give_circuit(circuit_db)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
 evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history.history)#$history_training.history["cost"])
 circuit, circuit_db = translator.give_circuit(minimized_db)
+
+#mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=1)
+#circuit, circuit_db = translator.give_circuit(mutated_db)
+
+
+reduced_db, simps = simplifier.reduce_circuit(circuit_db)
+
+
+
+
+database.describe_circuit(translator,reduced_db)
+
+database.describe_circuit(translator,mutated_db)
+
+
+
+reduced_db, reduced_cost, ops = simplification_misc.kill_and_simplify(circuit_db, cost, killer, simplifier)
+
+
+translator.give_circuit(reduced_db)[0]
+
+
+minimized_db, [cost, resolver, history] = minimizer.variational(reduced_db, parameter_perturbation_wall=1.)
+
+
+
+
+mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=10)
+mutated_cost = minimizer.build_and_give_cost(mutated_db)
+
+
+translator.give_circuit(mutated_db)[0]
+
+
+rminimized_db, [cost, resolver, history_training] = minimizer.variational(mutated_db,  parameter_perturbation_wall=1.)
+
+
+
+reduced_db, reduced_cost, ops = simplification_misc.kill_and_simplify(rminimized_db, cost, killer, simplifier)
+
+mutated_cost = minimizer.build_and_give_cost(reduced_db)
+
+
+
 
 
 for vans_it in range(evaluator.vans_its):
@@ -90,7 +136,6 @@ for vans_it in range(evaluator.vans_its):
     mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=2)
     mutated_cost = minimizer.build_and_give_cost(mutated_db)
 
-    print(mutated_db)
     evaluator.add_step(mutated_db, mutated_cost, relevant=False, operation="mutation", history = number_mutations)
 
     simplified_db, ns =  simplifier.reduce_circuit(mutated_db)

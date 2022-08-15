@@ -126,6 +126,7 @@ class TFQTranslator:
         if just_call == False:
             self.db = circuit_db.copy()
             self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
+        
         return circuit, circuit_db
 
     def initialize(self,**kwargs):

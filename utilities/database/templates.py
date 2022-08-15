@@ -127,15 +127,17 @@ def cnot(translator, q0, q1):
 def u1(translator, q):
     return [rz(translator, q), rx(translator,q), rz(translator,q)]
 def u2(translator, q0, q1):
-    """general two-qubit gate"""
+    """general two-qubit gate. Actually, i change rx with ry.."""
     l=[ u for u in u1(translator,q0)]
     for u in u1(translator, q1):
         l.append(u)
     l.append(cnot(translator,q0,q1))
     l.append(rz(translator,q0))
-    l.append(ry(translator,q1))
+    #l.append(ry(translator,q1))
+    l.append(rx(translator,q1))
     l.append(cnot(translator,q1,q0))
-    l.append(ry(translator,q1))
+#    l.append(ry(translator,q1))
+    l.append(rx(translator,q1))
     l.append(cnot(translator,q0,q1))
     for u in u1(translator, q0):
         l.append(u)

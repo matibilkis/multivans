@@ -20,6 +20,8 @@ def get_trainable_params_value(translator,circuit_db):
     index_trainable_params = circuit_db[circuit_db["trainable"] == True]["symbol"].dropna().index
     return circuit_db["param_value"][index_trainable_params]
 
+def describe_circuit(translator, circuit_db):
+    return give_trainable_parameters(translator, circuit_db), give_trainable_cnots(translator, circuit_db)
 
 def give_trainable_parameters(translator, circuit_db):
     indices =  circuit_db[circuit_db["trainable"] == True]["ind"]

@@ -1,18 +1,24 @@
 import numpy as np
 from ast import literal_eval
 import pandas as pd
+import utilities.database.database as database
 
 
-def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 1000):
+
+def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 100):
     killed_db, cost, murders = killer.remove_irrelevant_gates(initial_cost,cdb)
+    initial_params = database.describe_circuit(simplifier.translator, cdb)
+
     simplified_db, ns =  simplifier.reduce_circuit(killed_db)
     ops = ns+murders
     for it in range(max_rounds):
         killed_db, cost, murders = killer.remove_irrelevant_gates(cost,simplified_db)
         simplified_db, ns =  simplifier.reduce_circuit(killed_db)
         ops += ns+murders
+        current_params = database.describe_circuit(simplifier.translator, simplified_db)
+        print(cost, murders, ns, initial_params, current_params)
         if (murders == 0):
-            break ###this means you enter a loop in the simplifier...
+            break
     return simplified_db, cost,ops
 
 

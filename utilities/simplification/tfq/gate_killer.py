@@ -19,7 +19,7 @@ class GateKiller:
         self.translator = translator
         self.test_translator = translator_test
         #self.test_model = penny_variational.PennyModel(self.test_translator, **kwargs)
-        self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian="XXZ",params=[1.,.01], lower_bound_cost=0., who="killer") #i don't care about this lower_bound_cost
+        self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian=kwargs.get("hamiltonian","XXZ"),params=kwargs.get("params",[1.,.01]), lower_bound_cost=0., who="killer") #i don't care about this lower_bound_cost
 
         self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
 
@@ -57,7 +57,7 @@ class GateKiller:
         for murder_attempt in range(number_of_gates):
             circuit_db, new_cost, killed = self.kill_one_unitary(first_cost, circuit_db)
             circuit_db = order_symbol_labels(circuit_db)
-            #print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
+            # print("Killing, try {}/{}. Killed was {} now cost changes by: {}%".format(murder_attempt, number_of_gates, killed,(initial_cost-new_cost)/np.abs(initial_cost)))
             if killed is False:
                 break
         return circuit_db, new_cost, murder_attempt
@@ -101,6 +101,7 @@ class GateKiller:
             killed_costs.append(self.test_model.build_and_give_cost(killed_circuit_db))
 
         relative_increments = (np.array(killed_costs)-initial_cost)/np.abs(initial_cost)
+        # print(relative_increments)
         if len(relative_increments) == 0:
             return circuit_db, initial_cost, False
 

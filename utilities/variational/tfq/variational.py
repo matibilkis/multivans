@@ -80,6 +80,8 @@ class Minimizer:
 
         tfqcircuit = tfq.convert_to_tensor([cc])
         model(tfqcircuit) #this defines the weigths
+        model.trainable_variables[0].assign(tf.convert_to_tensor(trainable_param_values.astype(np.float32)))
+
         model.compile(optimizer=self.optimizer, loss=self.loss)
         return self.loss(*[model(tfqcircuit)]*2)
 
@@ -103,7 +105,7 @@ class Minimizer:
             trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
             return self.loss(*[self.model(batched_circuit)]*2)
 
-    def variational(self, circuit_db):
+    def variational(self, circuit_db, **kwargs):
         """
         proxy for minimize
         """
@@ -114,11 +116,12 @@ class Minimizer:
             optimized_circuit_db = self.translator.update_circuit_db_param_values(circuit_db, resolver)
             return optimized_circuit_db, [cost, resolver, training_history]
         elif self.mode.upper() == "VQE":
+            parameter_perturbation_wall = kwargs.get("parameter_perturbation_wall",1)
             cc, cdb = self.translator.give_circuit(circuit_db)
             batched_circuit = [cc]
 
             trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
-            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values )
+            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values , parameter_perturbation_wall=parameter_perturbation_wall)
 
             optimized_circuit_db = database.update_circuit_db_param_values(self.translator,cdb, resolver)
             return optimized_circuit_db, [cost, resolver, training_history]
