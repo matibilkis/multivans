@@ -38,13 +38,13 @@ from importlib import reload
 # reload(penny_simplifier)
 
 
-]parser = argparse.ArgumentParser(add_help=False)
+parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--problem", type=str, default="XXZ")
 parser.add_argument("--n_qubits", type=int, default=4)
 parser.add_argument("--params", type=str, default="[1., 1.1]")
 parser.add_argument("--nrun", type=int, default=0)
 parser.add_argument("--shots", type=int, default=0)
-parser.add_argument("--epochs", type=int, default=500)
+parser.add_argument("--epochs", type=int, default=5000)
 parser.add_argument("--vans_its", type=int, default=200)
 parser.add_argument("--itraj", type=int, default=1)
 
@@ -74,11 +74,11 @@ simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, g=g, J=J)
 inserter = idinserter.IdInserter(translator, noise_in_rotations=0.1)
 args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.nrun}
-evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_evaluator, lower_bound=translator.ground, nrun=args.nrun, stopping_criteria=1e-3, vans_its=args.vans_its)
+evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_evaluator, lower_bound=translator.ground, nrun=args.itraj, stopping_criteria=1e-3, vans_its=args.vans_its)
 
 
 #### begin the algorithm
-circuit_db = translator.initialize(mode="u1")
+circuit_db = translator.initialize(mode="u2")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
@@ -90,7 +90,7 @@ for vans_it in range(evaluator.vans_its):
     print("vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
     print(translator.give_circuit(circuit_db,unresolved=False)[0], "\n","*"*30)
 
-    mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=1)
+    mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=2)
     mutated_cost = minimizer.build_and_give_cost(mutated_db)
 
     print(mutated_db)
@@ -109,7 +109,7 @@ for vans_it in range(evaluator.vans_its):
         reduced_db, reduced_cost, ops = simplification_misc.kill_and_simplify(circuit_db, cost, killer, simplifier)
         evaluator.add_step(reduced_db, reduced_cost, relevant=False, operation="reduction", history = ops)
 
-        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=.1)
+        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=1.)
         evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history_training.history["cost"])
 
         circuit_db = minimized_db.copy()

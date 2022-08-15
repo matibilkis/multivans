@@ -6,7 +6,7 @@ from datetime import datetime
 from utilities.evaluator.misc import get_def_path
 
 class PennyLaneEvaluator(PennyLaneTranslator):
-    def __init__(self, args,
+    def __init__(self,minimizer, args,
                 **kwargs):
         """
         This class evaluates the cost at each iteration, and decides whether to accept the new circuit or not.
@@ -22,7 +22,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
 
         *** stopping criteria: relative error you will to accept.
         """
-        super(PennyLaneEvaluator, self).__init__(minimizer, n_qubits=args["n_qubits"])
+        super(PennyLaneEvaluator, self).__init__(n_qubits=args["n_qubits"])
 
         self.minimizer = minimizer
         self.raw_history = {}
