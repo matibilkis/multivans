@@ -22,9 +22,9 @@ class PennyLaneEvaluator(PennyLaneTranslator):
 
         *** stopping criteria: relative error you will to accept.
         """
-        super(PennyLaneEvaluator, self).__init__(n_qubits=args["n_qubits"])
+        super(PennyLaneEvaluator, self).__init__(minimizer, n_qubits=args["n_qubits"])
 
-
+        self.minimizer = minimizer
         self.raw_history = {}
         self.evolution = {}
         self.displaying={"information":"\n VAns started at {} \n".format(datetime.now())}
@@ -41,7 +41,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         self.lowest_acceptance_percentage = kwargs.get("lowest_acceptance_percentage", 1e-4)
         self.vans_its = kwargs.get("vans_its", 100)
         self.acceptance_percentage = kwargs.get("self.acceptance_percentage", 1e-2)
-
+        self.its_without_improving = 0
 
     def save_dicts_and_displaying(self):
         output = open(self.identifier+"/raw_history.pkl", "wb")
@@ -65,7 +65,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
                 self.displaying = pickle.load(hhh)
         return
 
-    def accept_cost(self, C):
+    def accept_cost(self, C, circuit_db):
         """
         C: cost after some optimization (to be accepted or not).
         """
@@ -75,9 +75,29 @@ class PennyLaneEvaluator(PennyLaneTranslator):
             stop = (C - self.lower_bound)/np.abs(self.lower_bound) <= self.acceptance_percentage ## relative error up to 1e-2, i finish
 
         if self.lowest_cost is None: ###accept initial modification
-            return True, stop
+            accept = True
         else:
-            return (C-self.lowest_cost)/np.abs(self.lowest_cost) <= self.acceptance_percentage, stop
+            accept = (C-self.lowest_cost)/np.abs(self.lowest_cost) <= self.acceptance_percentage
+
+        if accept == True:
+            returned_db = circuit_db.copy()
+            self.minimizer.lr = self.minimizer.initial_lr
+        else:
+            if self.its_without_improving > 5:
+                best_costs = [self.evolution[k][1] for k in range(len(list(self.evolution.keys())))]
+                indi_optimal = np.argmin(best_costs)
+                returned_db = self.evolution[indi_optimal][0]
+                print("getting back to optimal circuit found so far, i.e. {}".format(indi_optimal, best_costs[indi_optimal]))
+                self.its_without_improving = 0
+                self.acceptange_percentage = 1e-3
+                self.minimizer.lr = self.minimizer.initial_lr
+            else:
+                self.its_without_improving+=1
+                self.minimizer.lr/=10
+                returned_db = circuit_db.copy()
+                self.acceptance_percentage*=10
+                self.acceptance_percentage = min(1e-2, self.acceptance_percentage)
+        return accept, stop, returned_db
 
 
 

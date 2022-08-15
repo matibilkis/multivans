@@ -126,7 +126,7 @@ class TFQTranslator:
         if just_call == False:
             self.db = circuit_db.copy()
             self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
-        
+
         return circuit, circuit_db
 
     def initialize(self,**kwargs):
@@ -135,6 +135,10 @@ class TFQTranslator:
             circuit_db = templates.x_layer(self)
         elif mode=="u1":
             circuit_db = templates.u1_layer(self)
+        elif mode[:-1].lower()=="hea-":
+            circuit_db = database.concatenate_dbs([templates.hea_layer(self)]*int(mode[-1]))
+        elif mode == "hea":
+            circuit_db = templates.hea_layer(self)
         else:
             circuit_db = templates.u2_layer(self)
         qnode, circuit_db = self.give_circuit(circuit_db)

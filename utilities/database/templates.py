@@ -67,7 +67,6 @@ def x_layer(translator, **kwargs):
 
 def z_layer(translator,**kwargs):
     block_id = kwargs.get("block_id",0)
-    random_param = kwargs.get("block_id", True)
     random_param = lambda x: 0. if x is False else np.float32(np.pi*np.random.random())
     zz = pd.DataFrame([gate_template(k, param_value=random_param(random_param), block_id=block_id) for k in [translator.number_of_cnots +j for j in range(translator.n_qubits)]])
     return zz
@@ -81,6 +80,7 @@ def cnot_layer(translator, **kwargs):
         inds_cnots = range(0,translator.n_qubits)
     cnots = [translator.cnots_index[str([k,(k+1)%translator.n_qubits])] for k in inds_cnots]
     return pd.DataFrame([gate_template(k, block_id=block_id) for k in cnots])
+
 
 
 
@@ -114,7 +114,16 @@ def gate_template(ind,**kwargs):
     return dicti
 
 
-
+def hea_layer(translator):
+    c = []
+    for q in range(translator.n_qubits):
+        c.append(rx(translator, q))
+        c.append(rz(translator, q))
+        #c.append(rx(translator, (q+1)%translator.n_qubits))
+        #c.append(rz(translator, (q+1)%translator.n_qubits))
+        c.append(cnot(translator, q, (q+1)%translator.n_qubits))
+    zz = pd.DataFrame([gate_template(k, param_value=np.float32(np.pi*np.random.random()), block_id=0.) for k in c])
+    return zz
 
 def rz(translator, q):
     return translator.number_of_cnots  + q

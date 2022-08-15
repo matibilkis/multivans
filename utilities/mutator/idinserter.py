@@ -13,11 +13,11 @@ class IdInserter:
 
         self.translator = translator
         n_qubits = self.n_qubits = translator.n_qubits
-        self.spread_CNOTs=kwargs.get("spread_CNOTs",False)
-        self.choose_qubit_Temperature = kwargs.get("choose_qubit_Temperature",0.)
+        self.spread_CNOTs=kwargs.get("spread_CNOTs",True)
+        self.choose_qubit_Temperature = kwargs.get("choose_qubit_Temperature",10.)
         self.untouchable_blocks = kwargs.get("untouchable_blocks",[None])
         self.untouchable_qubits = kwargs.get("untouchable_qubits",[])
-        self.noise_in_rotations=kwargs.get("noise_in_rotations",0.)
+        self.noise_in_rotations=kwargs.get("noise_in_rotations",0.01)
 
         self.touchable_qubits = list(range(n_qubits))
 

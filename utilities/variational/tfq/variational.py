@@ -24,6 +24,7 @@ class Minimizer:
             self.mode = mode ##VQE, DISCRIMINATION, COMPILING... (latter not sure if we can implement it now, that's why I coded everyhting again in pennylane)
             ## training hyperparameters
             self.lr = kwargs.get("lr", 0.01)
+            self.initial_lr = kwargs.get("lr", 0.01)
             self.epochs=kwargs.get("epochs",5000)
             self.patience = kwargs.get("patience",100)
             self.max_time_training = kwargs.get("max_time_continuous",60)
@@ -148,7 +149,7 @@ class Minimizer:
             self.model.trainable_variables[0].assign(tf.convert_to_tensor(np.pi*4*np.random.randn(len(symbols)).astype(np.float32)))
 
         if np.random.uniform() < parameter_perturbation_wall:
-            perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.model.trainable_variables[0]))))
+            perturbation_strength = abs(np.random.normal(scale=0.1*np.max(np.abs(self.model.trainable_variables[0]))))
             self.model.trainable_variables[0].assign(self.model.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(len(symbols)).astype(np.float32)))
 
         calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]

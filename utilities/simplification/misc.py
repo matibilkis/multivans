@@ -16,7 +16,7 @@ def kill_and_simplify(cdb, initial_cost, killer, simplifier, max_rounds = 100):
         simplified_db, ns =  simplifier.reduce_circuit(killed_db)
         ops += ns+murders
         current_params = database.describe_circuit(simplifier.translator, simplified_db)
-        print(cost, murders, ns, initial_params, current_params)
+        #print(cost, murders, ns, initial_params, current_params)
         if (murders == 0):
             break
     return simplified_db, cost,ops

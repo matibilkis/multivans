@@ -91,11 +91,12 @@ reload(penny_simplifier)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 
 
+
+tf.random.seed(1)
+
 sdb, ns = simplifier.reduce_circuit(circuit_db)
 
-n, sdb = simplifier.apply_rule(circuit_db, simplifier.rule_6)
-simplified.order_symbols(sdb)
-
+minimizer.variational(sdb)
 
 
 

@@ -7,6 +7,7 @@ class FakeArgs:
         self.epochs = args["epochs"]
         self.n_qubits = args["n_qubits"]
         self.vans_its = args["vans_its"]
+        self.itraj = args["itraj"]
 
 def convert_shorts(x):
     if x==0:

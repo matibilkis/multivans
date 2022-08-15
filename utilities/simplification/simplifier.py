@@ -38,42 +38,20 @@ class PennyLane_Simplifier:
 
     def reduce_circuit(self, circuit_db):
         simplified_db = circuit_db.copy()
-        blocked_circuit = {}
         nsimps=0
-        for block in set(circuit_db["block_id"]):
-            blocked_circuit[block] = simplified_db[simplified_db["block_id"] == block]
+        for routine_check in range(100):
+            final_cnt = 0
+            ip, icnot = database.describe_circuit(self.translator, simplified_db)
+            for rule in self.rules:
+                cnt, simplified_db  = self.apply_rule(simplified_db  , rule)
+                final_cnt += cnt
+            simplified_db = self.order_symbols(simplified_db) ## this is because from block to block there might be a gap in the symbols order!
+            sc, simplified_db = self.translator.give_circuit(simplified_db) ### and this is because I save current db to train inside translator..
 
-            if (block in self.untouchable) == False: #### only simplify those blocks which we have control of!
-                for routine_check in range(100):
-                    final_cnt = 0
-                    ip, icnot = database.describe_circuit(self.translator, blocked_circuit[block])
-                    for rule in self.rules:
-                        cnt, blocked_circuit[block]  = self.apply_rule(blocked_circuit[block]  , rule)
-                        final_cnt += cnt
-#                        print(cnt, final_cnt, "a")
-                    #for rule in self.absolute_rules:
-                #        cnt, blocked_circuit[block]  = self.apply_rule(blocked_circuit[block]  , rule)
-            #            final_cnt += cnt
-        #            if (self.apply_relatives_to_first == True): #(block == 0) and
-                        #for rule in self.relative_rules:
-                    #        cnt, blocked_circuit[block]  = self.apply_rule(blocked_circuit[block]  , rule)
-                #            final_cnt += cnt
-                    nsimps +=final_cnt
-                    cp, ccnot = database.describe_circuit(self.translator,blocked_circuit[block])
-                    if not ((cp < ip) or (ccnot < icnot)):
-                        break
-                    # else:
-                        # print("it: {}, circuit: {}".format(routine_check, [cp, ccnot, ip, icnot]))
-                        # pass
-                    #if final_cnt < 2:
-                    #    break
-                    #print(final_cnt, nsimps)
-            else:
-                blocked_circuit[block] = simplified_db[simplified_db["block_id"] == block]
-        simplified_db = concatenate_dbs([sb for sb in blocked_circuit.values()])
-        simplified_db = self.order_symbols(simplified_db) ## this is because from block to block there might be a gap in the symbols order!
-        sc, simplified_db = self.translator.give_circuit(simplified_db) ### and this is because I save current db to train inside translator..
-        # print(final_cnt, nsimps, database.describe_circuit(self.translator,simplified_db))
+            cp, ccnot = database.describe_circuit(self.translator,simplified_db)
+            if not ((cp < ip) or (ccnot < icnot)):
+                break
+
         return simplified_db, nsimps
 
     def apply_rule(self, original_circuit_db, rule, **kwargs):
