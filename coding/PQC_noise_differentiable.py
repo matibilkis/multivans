@@ -151,7 +151,7 @@ class model(tf.keras.Model):
 
 momo = model(nois, minimizer.observable)
 momo(inpu)
-momo.compile(optimizer=tf.keras.Optimimizers.Adam(lr=0.01),loss= EnergyLoss())
+momo.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),loss= EnergyLoss())
 momo.train_step([inpu, inpu])
 momo.fit(x=inpu, y=inpu, epochs=100)
 
