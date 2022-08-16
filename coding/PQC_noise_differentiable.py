@@ -100,42 +100,31 @@ my_differentiable_op = diff.generate_differentiable_op(sampled_op=tfq.noise.expe
 my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
 
 
-layer = tfq.layers.Expectation(backend='noisy')
-layer(noisy, operators=minimizer.observable, repetitions=100)
 
 
-layer.trainable_variables
+translator = tfq_translator.TFQTranslator(n_qubits = 4, initialize="x")#, device_name="forest.numpy_wavefunction")
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=100, max_time_training=600)
 
 
 circuit_db = translator.initialize(mode="x")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
 
-minimizer.build_and_give_cost(circuit_db)
 nois = circuit + cirq.Circuit(cirq.depolarize(.01).on_each(*circuit.all_qubits()))
 
-
-lala = tfq.layers.NoisyPQC(nois, minimizer.observable, repetitions=1000,sample_based=False)#, differentiator=tfq.differentiators.ForwardDifference())
-lala(tfq.convert_to_tensor([cirq.Circuit([])]))
-
+lala = tfq.layers.NoisyPQC(nois, minimizer.observable, repetitions=1000,sample_based=False)
 inpu = tfq.convert_to_tensor([cirq.Circuit([])])
-
-
-with tf.GradientTape(persistent=True) as tape:
+lala.trainable_variables[0].assign(tf.convert_to_tensor(list(database.get_trainable_params_value(translator, circuit_db))))
+with tf.GradientTape() as tape:
     tape.watch(lala.trainable_variables)
-    preds = lala(inpu)
+    cost = tf.reduce_sum(lala(inpu))
 
-tape.gradient(preds,lala.trainable_variables)
-
-preds[0]
-
-
-
+cost
+minimizer.build_and_give_cost(circuit_db)
 
 class model(tf.keras.Model):
     def __init__(self, cir, observable ):
         super(model,self).__init__()
         self.lay = tfq.layers.NoisyPQC(cir, observable, repetitions=1000,sample_based=False)
-
 
     def call(self, inputs):
         """
@@ -152,10 +141,9 @@ class model(tf.keras.Model):
             tape.watch(self.trainable_variables)
             preds = self(x)#,training=True)
             cost = self.compiled_loss(preds, preds) #notice that compiled loss takes care only about the preds
-        train_vars = self.trainable_variables
-        grads=tape.gradient(cost,train_vars)
+        grads=tape.gradient(cost,self.trainable_variables)
         #self.gradient_norm.update_state(tf.reduce_sum(tf.pow(grads[0],2)))
-        self.optimizer.apply_gradients(zip(grads, train_vars))
+        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
         #self.cost_value.update_state(cost)
         #self.lr_value.update_state(self.optimizer.lr)
         return {k.name:k.result() for k in self.metrics}
@@ -163,7 +151,7 @@ class model(tf.keras.Model):
 
 momo = model(nois, minimizer.observable)
 momo(inpu)
-momo.compile(optimizer="adam",loss="mse")
+momo.compile(optimizer=tf.keras.Optimimizers.Adam(lr=0.01),loss= EnergyLoss())
 momo.train_step([inpu, inpu])
 momo.fit(x=inpu, y=inpu, epochs=100)
 
@@ -262,7 +250,90 @@ my_differentiable_op = diff.generate_differentiable_op(sampled_op=tfq.noise.expe
 my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
 
 values = tf.convert_to_tensor(values)
+
 with tf.GradientTape() as tape:
     tape.watch(values)
     p = my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
-tape.gradient(p,values)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+my_op = tfq.get_expectation_op()
+linear_differentiator = tfq.differentiators.ForwardDifference(2, 0.01)
+
+
+op = linear_differentiator.generate_differentiable_op(
+    analytic_op=my_op
+)
+
+qubit = cirq.GridQubit(0, 0)
+circuit = tfq.convert_to_tensor([
+    cirq.Circuit(cirq.X(qubit) ** sympy.Symbol('alpha'))
+])
+
+
+psums = tfq.convert_to_tensor([[cirq.Z(qubit)]])
+symbol_values_array = np.array([[0.123]], dtype=np.float32)
+
+
+# Calculate tfq gradient.
+symbol_values_tensor = tf.convert_to_tensor(symbol_values_array)
+with tf.GradientTape() as g:
+    g.watch(symbol_values_tensor)
+    expectations = op(circuit, ['alpha'], symbol_values_tensor, psums)
+
+# Gradient would be: -50 * f(x + 0.02) +  200 * f(x + 0.01) - 150 * f(x)
+grads = g.gradient(expectations, symbol_values_tensor)
+grads
+
+
+
+
+
+sympy.__version__
+tfq.__version__
+cirq.__version__
+
+
+my_op = tfq.get_expectation_op()
+linear_differentiator = tfq.differentiators.ForwardDifference(2, 0.01)
+op = linear_differentiator.generate_differentiable_op(
+    analytic_op=my_op
+)
+qubit = cirq.GridQubit(0, 0)
+circuit = tfq.convert_to_tensor([
+    cirq.Circuit([cirq.X(qubit) ** sympy.Symbol('alpha'), cirq.X(qubit) ** sympy.Symbol('beta')])
+])
+
+psums = tfq.convert_to_tensor([[cirq.Z(qubit)]])
+symbol_values_array = np.array([[0.123, .2]], dtype=np.float32)
+
+# Calculate tfq gradient.
+symbol_values_tensor = tf.convert_to_tensor(symbol_values_array)
+with tf.GradientTape() as g:
+    g.watch(symbol_values_tensor)
+    expectations = op(circuit, ['alpha','beta'], symbol_values_tensor, psums)
+grads = g.gradient(expectations, symbol_values_tensor)
+grads
+
+# Gradient would be: -50 * f(x + 0.02) +  200 * f(x + 0.01) - 150 * f(x)

@@ -28,7 +28,8 @@ class Minimizer:
             self.epochs=kwargs.get("epochs",5000)
             self.patience = kwargs.get("patience",100)
             self.max_time_training = kwargs.get("max_time_continuous",60)
-            self.optimizer = tf.keras.optimizers.Adam(learning_rate = self.lr)
+            #self.optimizer = tf.keras.optimizers.Adam(learning_rate = self.lr)
+            self.optimizer = tf.keras.optimizers.SGD(learning_rate = self.lr)
             self.minimization_step=0 #used for tensorboard
 
             if mode.upper() == "VQE":
@@ -125,6 +126,8 @@ class Minimizer:
             cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values , parameter_perturbation_wall=parameter_perturbation_wall)
 
             optimized_circuit_db = database.update_circuit_db_param_values(self.translator,cdb, resolver)
+            self.model.optimizer.lr.assign(self.initial_lr)
+
             return optimized_circuit_db, [cost, resolver, training_history]
 
 

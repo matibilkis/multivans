@@ -75,10 +75,52 @@ class QNN_VQE(tf.keras.Model):
         train_vars = self.trainable_variables
         grads=tape.gradient(cost,train_vars)
         self.gradient_norm.update_state(tf.reduce_sum(tf.pow(grads[0],2)))
-        self.optimizer.apply_gradients(zip(grads, train_vars))
+
+        if self.optimizer.get_config()["name"] == "SGD":
+            self.qacq_gradients(cost, grads, x)
+        else:
+            self.optimizer.apply_gradients(zip(grads,train_vars))
+
         self.cost_value.update_state(cost)
         self.lr_value.update_state(self.optimizer.lr)
+        
         return {k.name:k.result() for k in self.metrics}
+
+    def qacq_gradients(self, cost, grads, x):
+        """
+        Algorithm 4 of https://arxiv.org/pdf/1807.00800.pdf
+        """
+        g=tf.reduce_sum(tf.pow(grads[0],2))
+        initial_lr = tf.identity(self.optimizer.lr)
+        initial_params = tf.identity(self.trainable_variables)
+
+        #compute line 10
+        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+        alpha1 = tf.identity(self.trainable_variables)
+        preds1 = self(x)
+        cost1 = self.compiled_loss(preds1,preds1)
+
+        #compute line 11
+        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+        alpha2 = tf.identity(self.trainable_variables)
+        preds2=self(x)
+        cost2 = self.compiled_loss(preds2,preds2)
+
+        self.condi(tf.math.greater_equal(cost - cost2, initial_lr*g),tf.math.greater_equal(initial_lr*g/2,cost - cost1), initial_lr,alpha1, alpha2)
+        return
+
+    @tf.function
+    def condi(self,var1, var2, initial_lr, alpha1, alpha2):
+        if var1 == True:
+            self.optimizer.lr.assign(2*initial_lr)
+            self.trainable_variables[0].assign(alpha2[0])
+        else:
+            if var2 == True:
+                #self.optimizer.lr.assign(tf.reduce_max([1e-4,initial_lr/2]))
+                self.optimizer.lr.assign(initial_lr/2)
+                self.trainable_variables[0].assign(alpha1[0])
+            else:
+                self.trainable_variables[0].assign(alpha1[0])
 
     @property
     def metrics(self):

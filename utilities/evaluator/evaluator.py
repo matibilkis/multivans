@@ -78,25 +78,21 @@ class PennyLaneEvaluator(PennyLaneTranslator):
             accept = True
         else:
             accept = (C-self.lowest_cost)/np.abs(self.lowest_cost) <= self.acceptance_percentage
-
         if accept == True:
             returned_db = circuit_db.copy()
-            self.minimizer.lr = self.minimizer.initial_lr
         else:
-            if self.its_without_improving > 5:
+            if self.its_without_improving > 25:
                 best_costs = [self.evolution[k][1] for k in range(len(list(self.evolution.keys())))]
                 indi_optimal = np.argmin(best_costs)
                 returned_db = self.evolution[indi_optimal][0]
-                print("getting back to optimal circuit found so far, i.e. {}".format(indi_optimal, best_costs[indi_optimal]))
+                print("getting back to {}w/ cost {}".format(indi_optimal, best_costs[indi_optimal]))
                 self.its_without_improving = 0
                 self.acceptange_percentage = 1e-3
-                self.minimizer.lr = self.minimizer.initial_lr
             else:
                 self.its_without_improving+=1
-                self.minimizer.lr/=10
                 returned_db = circuit_db.copy()
-                self.acceptance_percentage*=10
-                self.acceptance_percentage = min(1e-2, self.acceptance_percentage)
+                #self.acceptance_percentage*=10#
+                #self.acceptance_percentage = min(1e-2, self.acceptance_percentage)
         return accept, stop, returned_db
 
 
@@ -130,7 +126,6 @@ class PennyLaneEvaluator(PennyLaneTranslator):
             self.evolution[len(list(self.evolution.keys()))] = [database, cost, self.lowest_cost, self.lower_bound, self.acceptance_percentage, operation, history]
         self.save_dicts_and_displaying()
         return
-
 
 ### things not used
 

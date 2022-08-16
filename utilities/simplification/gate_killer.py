@@ -19,7 +19,7 @@ class GateKiller:
         self.test_translator = translator_test
         self.test_model = penny_variational.PennyModel(self.test_translator, **kwargs)
         self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
-
+        self.printing = True
 
     def get_positional_dbs(self, circuit_db):
         """
@@ -53,9 +53,11 @@ class GateKiller:
         for murder_attempt in range(number_of_gates):
             circuit_db, new_cost, killed = self.kill_one_unitary(first_cost, circuit_db)
             circuit_db = order_symbol_labels(circuit_db)
-            # print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
-            if killed is False:
+
+            if killed == False:
                 break
+            if (self.printing == True) and (killed = True):
+                print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
         return circuit_db, new_cost, murder_attempt
 
     def kill_one_unitary(self, initial_cost, circuit_db):

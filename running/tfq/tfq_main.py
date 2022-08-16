@@ -61,13 +61,13 @@ g,J = params
 shots = miscrun.convert_shorts(args.shots)
 epochs = args.epochs
 n_qubits = args.n_qubits
-learning_rate=0.01
+learning_rate=1e-4
 tf.random.set_seed(args.itraj)
 np.random.seed(args.itraj)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x")#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x")#, device_name=translator.device_name)
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=100, max_time_training=600)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=50, max_time_training=600)
 
 
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
@@ -78,7 +78,7 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_ev
 
 
 #### begin the algorithm
-circuit_db = translator.initialize(mode="u2")
+circuit_db = translator.initialize(mode="x")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
@@ -90,7 +90,7 @@ for vans_it in range(evaluator.vans_its):
     print("vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
     print(translator.give_circuit(circuit_db,unresolved=False)[0], "\n","*"*30)
 
-    mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=2)
+    mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=1)
     mutated_cost = minimizer.build_and_give_cost(mutated_db)
 
     print(mutated_db)
