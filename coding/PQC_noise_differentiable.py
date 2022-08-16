@@ -100,11 +100,6 @@ my_differentiable_op = diff.generate_differentiable_op(sampled_op=tfq.noise.expe
 my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
 
 
-
-
-
-
-
 layer = tfq.layers.Expectation(backend='noisy')
 layer(noisy, operators=minimizer.observable, repetitions=100)
 
@@ -172,48 +167,7 @@ momo.compile(optimizer="adam",loss="mse")
 momo.train_step([inpu, inpu])
 momo.fit(x=inpu, y=inpu, epochs=100)
 
-
-
-class QNN_VQE(tf.keras.Model):
-    def __init__(self, symbols, observable, batch_sizes=1):
-        """
-        symbols: symbolic variable [sympy.Symbol]*len(rotations_in_circuit)
-        batch_size: how many circuits you feed the model at, at each call (this might )
-        """
-        super(QNN_VQE,self).__init__()
-        self.expectation_layer = tfq.layers.NoisyPQC(nois, observable, repetitions=1000,sample_based=False)
-        self.symbols = symbols
-        self.observable = tfq.convert_to_tensor([observable]*batch_sizes)
-        self.cost_value = Metrica(name="cost")
-        self.lr_value = Metrica(name="lr")
-        self.gradient_norm = Metrica(name="grad_norm")
-
-    def call(self, inputs):
-        """
-        inputs: tfq circuits (resolved or not, to train one has to feed unresolved).
-        """
-        feat = inputs
-        f = self.expectation_layer(feat, operators=self.observable, symbol_names=self.symbols)
-        f = tf.math.reduce_sum(f,axis=-1)
-        return f
-
-    def train_step(self, data):
-        x,y=data
-        with tf.GradientTape() as tape:
-            tape.watch(self.trainable_variables)
-            preds = self(x,training=True)
-            cost = self.compiled_loss(preds, preds) #notice that compiled loss takes care only about the preds
-        train_vars = self.trainable_variables
-        grads=tape.gradient(cost,train_vars)
-        self.gradient_norm.update_state(tf.reduce_sum(tf.pow(grads[0],2)))
-        self.optimizer.apply_gradients(zip(grads, train_vars))
-        self.cost_value.update_state(cost)
-        self.lr_value.update_state(self.optimizer.lr)
-        return {k.name:k.result() for k in self.metrics}
-
-    @property
-    def metrics(self):
-        return [self.cost_value, self.lr_value,self.gradient_norm]
+### this takes like 1 sec per gradient descent step
 
 
 
@@ -226,104 +180,89 @@ class QNN_VQE(tf.keras.Model):
 
 
 
+#### customized... this is nicer, but only for 1 qubit !!
+translator = tfq_translator.TFQTranslator(n_qubits = 1, initialize="x")#, device_name="forest.numpy_wavefunction")
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=100, max_time_training=600)
 
 
+circuit_db = translator.initialize(mode="x")
+circuit, circuit_db = translator.give_circuit(translator.db_train, unresolved=True)
+
+nois = circuit + cirq.Circuit(cirq.depolarize(.01).on_each(*circuit.all_qubits()))
+values = np.array([database.get_trainable_params_value(translator,circuit_db)])
 
 
+noisy = tfq.convert_to_tensor([nois])
+symbols = database.get_trainable_symbols(translator, circuit_db)
+tfqobs = tfq.convert_to_tensor([minimizer.observable[:1]])
+
+samples = np.array([[1000]*1])
+tfq.noise.expectation( noisy,  symbols, values, tfqobs, samples)
 
 
+diff = tfq.differentiators.ForwardDifference()
+my_differentiable_op = diff.generate_differentiable_op(sampled_op=tfq.noise.expectation)
+my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-model = minimizer.model_class(symbols=symbols, observable=minimizer.observable, batch_sizes=1)
-
-model(tfq.convert_to_tensor([circuit]))
-
-
-
-model.trainable_variables
-
-
-values
-values = tf.convert_to_tensor(np.array([database.get_trainable_params_value(translator,circuit_db)]))
+values = tf.convert_to_tensor(values)
 with tf.GradientTape() as tape:
     tape.watch(values)
-    preds = my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
-
-tape.gradient(preds,values)
-
+    p = my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
+tape.gradient(p,values)
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### customized... this is nicer, but only for 1 qubit !!
+translator = tfq_translator.TFQTranslator(n_qubits = 2, initialize="x")#, device_name="forest.numpy_wavefunction")
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=100, max_time_training=600)
+
+
+circuit_db = translator.initialize(mode="x")
+circuit, circuit_db = translator.give_circuit(translator.db_train, unresolved=True)
+
+nois = circuit + cirq.Circuit(cirq.depolarize(.01).on_each(*circuit.all_qubits()))
+values = np.array([database.get_trainable_params_value(translator,circuit_db)])
+
+
+noisy = tfq.convert_to_tensor([nois])
+symbols = database.get_trainable_symbols(translator, circuit_db)
+tfqobs = tfq.convert_to_tensor([minimizer.observable[:1]])
+
+samples = np.array([[1000]*1])
+tfq.noise.expectation( noisy,  symbols, values, tfqobs, samples)
+
+
+diff = tfq.differentiators.ForwardDifference()
+my_differentiable_op = diff.generate_differentiable_op(sampled_op=tfq.noise.expectation)
+my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
+
+values = tf.convert_to_tensor(values)
 with tf.GradientTape() as tape:
-    tape.watch(model.trainable_variables)
-    preds = my_differentiable_op( noisy,  symbols, model.trainable_variables, tfqobs, samples)
-
-
-preds
-model.trainable_variables[0]
-tape.gradient(cost,model.trainable_variables[0])
-
-len(model.observable[0])
-
-
-
-minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
-
-evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history.history)#$history_training.history["cost"])
-circuit, circuit_db = translator.give_circuit(minimized_db)
-
-
-for vans_it in range(evaluator.vans_its):
-    print("vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
-    print(translator.give_circuit(circuit_db,unresolved=False)[0], "\n","*"*30)
-
-    mutated_db, number_mutations = inserter.mutate(circuit_db, mutation_rate=2)
-    mutated_cost = minimizer.build_and_give_cost(mutated_db)
-
-    print(mutated_db)
-    evaluator.add_step(mutated_db, mutated_cost, relevant=False, operation="mutation", history = number_mutations)
-
-    simplified_db, ns =  simplifier.reduce_circuit(mutated_db)
-    simplified_cost = minimizer.build_and_give_cost(simplified_db)
-    evaluator.add_step(simplified_db, simplified_cost, relevant=False, operation="simplification", history = ns)
-
-    minimized_db, [cost, resolver, history_training] = minimizer.variational(simplified_db, parameter_perturbation_wall=1.)
-    evaluator.add_step(minimized_db, cost, relevant=False, operation="variational", history = history_training.history["cost"])
-
-    accept_cost, stop, circuit_db = evaluator.accept_cost(cost, minimized_db)
-    if accept_cost == True:
-
-        reduced_db, reduced_cost, ops = simplification_misc.kill_and_simplify(circuit_db, cost, killer, simplifier)
-        evaluator.add_step(reduced_db, reduced_cost, relevant=False, operation="reduction", history = ops)
-
-        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=1.)
-        evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history_training.history["cost"])
-
-        circuit_db = minimized_db.copy()
-    if stop == True:
-        print("ending VAns")
-        delta_cost = (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)
-        print("\n final cost: {}\ntarget cost: {}, relative error: {} \n\n\n\n".format(cost, evaluator.lower_bound, delta_cost))
-        break
+    tape.watch(values)
+    p = my_differentiable_op( noisy,  symbols, values, tfqobs, samples)
+tape.gradient(p,values)
