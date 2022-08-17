@@ -31,7 +31,8 @@ class Minimizer:
             #self.optimizer = tf.keras.optimizers.Adam(learning_rate = self.lr)
             self.optimizer = tf.keras.optimizers.SGD(learning_rate = self.lr)
             self.minimization_step=0 #used for tensorboard
-            self.noisy = kwargs.get("noisy",False)
+            self.noisy = self.translator.noisy#kwargs.get("noisy",False)
+            self.verbose = kwargs.get("verbose",0)
 
             if mode.upper() == "VQE":
                 hamiltonian = kwargs.get("hamiltonian")
@@ -126,7 +127,7 @@ class Minimizer:
             batched_circuit = [cc]
 
             trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
-            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values , parameter_perturbation_wall=parameter_perturbation_wall, verbose=kwargs.get("verbose",0))
+            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values , parameter_perturbation_wall=parameter_perturbation_wall)
 
             optimized_circuit_db = database.update_circuit_db_param_values(self.translator,cdb, resolver)
             self.model.optimizer.lr.assign(self.initial_lr)
@@ -134,7 +135,7 @@ class Minimizer:
             return optimized_circuit_db, [cost, resolver, training_history]
 
 
-    def minimize(self, batched_circuits, symbols, parameter_values=None, parameter_perturbation_wall=1, verbose=0):
+    def minimize(self, batched_circuits, symbols, parameter_values=None, parameter_perturbation_wall=1):
         """
         batched_circuits:: list of cirq.Circuits (should NOT be resolved or with Sympy.Symbol)
         symbols:: list of strings containing symbols for each rotation
@@ -161,15 +162,17 @@ class Minimizer:
             random_tensor = tf.random.uniform(self.model.trainable_variables[0].shape)*self.model.trainable_variables[0]/10
             self.model.trainable_variables[0].assign(self.model.trainable_variables[0] + random_tensor)
 
-        calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]
+        calls=[SaveBestModel(),tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0, restore_best_weights=True),TimedStopping(seconds=self.max_time_training)]
 
         if hasattr(self, "tensorboarddata"):
             self.minimization_step+=1 #this is because we call the module many times !
             calls.append(tf.keras.callbacks.TensorBoard(log_dir=self.tensorboarddata+"/logs/{}".format(self.minimization_step)))
 
-        training_history = self.model.fit(x=tfqcircuit, y=tf.zeros((batch_size,)),verbose=verbose, epochs=self.epochs, batch_size=batch_size, callbacks=calls)
+        training_history = self.model.fit(x=tfqcircuit, y=tf.zeros((batch_size,)),verbose=self.verbose, epochs=self.epochs, batch_size=batch_size, callbacks=calls)
 
-        cost = self.model.cost_value.result()
+        self.model.set_weights(calls[0].best_weights)
+        cost = self.model.compiled_loss(*[self.model(tfqcircuit)]*2) 
+        # cost = self.model.cost_value.result()
         final_params = self.model.trainable_variables[0].numpy()
         resolver = {"th_"+str(ind):var  for ind,var in enumerate(final_params)}
         return cost, resolver, training_history
@@ -202,3 +205,18 @@ def prepare_circuit_vqe(circuit_db):
     trainable_symbols = translator.get_trainable_symbols(circuit_db)
     trainable_param_values = translator.get_trainable_params_value(circuit_db)
     return trainable_symbols, trainable_param_values
+
+class SaveBestModel(tf.keras.callbacks.Callback):
+    def __init__(self, save_best_metric='cost'):
+        self.save_best_metric = save_best_metric
+        self.best = np.inf
+
+    def on_epoch_end(self, epoch, logs=None):
+        metric_value = logs[self.save_best_metric]
+        if metric_value < self.best:
+            self.best = metric_value
+            self.best_weights= self.model.get_weights()
+
+
+
+#

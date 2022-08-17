@@ -36,7 +36,10 @@ def give_observable_vqe(minimizer, hamiltonian, params):
         raise NotImplementedError("Hamiltonian not implemented yet")
 
 def compute_lower_bound_cost_vqe(minimizer):
-    return np.real(np.min(np.linalg.eigvals(sum(minimizer.observable).matrix())))
+    if minimizer.noisy == True:
+        return -np.inf
+    else:
+        return np.real(np.min(np.linalg.eigvals(sum(minimizer.observable).matrix())))
 
 def prepare_optimization_vqe(translator, circuit_db):
     trainable_symbols = database.get_trainable_symbols(translator,circuit_db)

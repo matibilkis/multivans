@@ -71,7 +71,6 @@ class GateKiller:
             block_db = circuit_db[circuit_db["block_id"] == b]
             block_db_trainable = block_db[block_db["trainable"] == True]
             block_db_trainable = block_db_trainable[~block_db_trainable["symbol"].isna()]
-            block_db_trainable = block_db_trainable[~block_db_trainable["symbol"].isna()]
             all_candidates = list(block_db_trainable.index)
 
             ### check if the circuit is too short... (another possibility is to replace this guy by an rz(0)

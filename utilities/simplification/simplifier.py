@@ -199,7 +199,7 @@ class PennyLane_Simplifier:
             if simplification is True:
                 break
             for order_gate_on_qubit, ind_gate in enumerate(qubit_gates_path[:-1]):
-                if order_gate_on_qubit == 0 and (self.translator.number_of_cnots <= ind_gate< self.translator.number_of_cnots+ self.translator.n_qubits ):
+                if (order_gate_on_qubit == 0) and (self.translator.number_of_cnots <= ind_gate< self.translator.number_of_cnots+ self.translator.n_qubits ) and (len(qubit_gates_path[:-1])>1):
                     pos_gate_to_drop = on_qubit_order[q][order_gate_on_qubit]
                     simplified_db = simplified_db.drop(labels=[pos_gate_to_drop],axis=0)
                     simplified_db = simplified_db.reset_index(drop=True)

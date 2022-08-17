@@ -18,8 +18,7 @@ class GateKiller:
         """
         self.translator = translator
         self.test_translator = translator_test
-        #self.test_model = penny_variational.PennyModel(self.test_translator, **kwargs)
-        self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian=kwargs.get("hamiltonian","XXZ"),params=kwargs.get("params",[1.,.01]), lower_bound_cost=0., who="killer") #i don't care about this lower_bound_cost
+        self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian=kwargs.get("hamiltonian","XXZ"),params=kwargs.get("params",[1.,.01]), lower_bound_cost=0., who="killer")
 
         self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
         self.printing = True
@@ -46,10 +45,6 @@ class GateKiller:
                 on_qubit_order[(ind_gate-self.translator.n_qubits)%self.translator.n_qubits].append(order_gate)
         return gates_on_qubit, on_qubit_order
 
-
-    def give_cost_external_model(self, circuit_db):
-        # return self.test_model.give_cost_external(circuit_db)
-        return self.test_model.give_cost(circuit_db)
 
     def remove_irrelevant_gates(self,initial_cost, circuit_db):
         first_cost = initial_cost
@@ -92,14 +87,6 @@ class GateKiller:
             killed_circuit_db = killed_circuit_db.drop(labels=[index_candidate])
             killed_circuit_db = shift_symbols_down(self.test_translator, index_candidate+1, killed_circuit_db)
 
-            # self.test_translator.db_train = killed_circuit_db
-            # self.test_model.build_model()
-            # self.test_model(self.test_model.translator.db_train)
-            #
-            # survival_symbols, survival_params_value = database.get_trainable_symbols(self.test_translator,killed_circuit_db), database.get_trainable_params_value(self.test_translator,killed_circuit_db)
-            #
-            # self.test_model.trainable_variables[0].assign(tf.convert_to_tensor(survival_params_value.astype(np.float32)))
-            # killed_costs.append(self.give_cost_external_model(killed_circuit_db))
             killed_costs.append(self.test_model.build_and_give_cost(killed_circuit_db))
 
         relative_increments = (np.array(killed_costs)-initial_cost)/np.abs(initial_cost)

@@ -34,7 +34,10 @@ class PennyLaneEvaluator(PennyLaneTranslator):
 
         args["params"] = np.round(args["params"],2)
         self.args = args
-        self.identifier =  get_def_path() + "{}/{}/{}/".format(args["problem"],args["params"], args["nrun"])
+        if minimizer.noisy == True:
+            self.identifier =  get_def_path() + "noisy_{}_{}/{}/{}/".format(minimizer.translator.noise_strength,args["problem"],args["params"], args["nrun"])
+        else:
+            self.identifier =  get_def_path() + "{}/{}/{}/".format(args["problem"],args["params"], args["nrun"])
 
         os.makedirs(self.identifier, exist_ok=True)
 
@@ -79,6 +82,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         else:
             accept = (C-self.lowest_cost)/np.abs(self.lowest_cost) <= self.acceptance_percentage
         if accept == True:
+            # print(accept, (C-self.lowest_cost)/np.abs(self.lowest_cost), C, self.lowest_cost)
             returned_db = circuit_db.copy()
         else:
             if self.its_without_improving > 25:
