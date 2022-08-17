@@ -22,7 +22,7 @@ class GateKiller:
         self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian=kwargs.get("hamiltonian","XXZ"),params=kwargs.get("params",[1.,.01]), lower_bound_cost=0., who="killer") #i don't care about this lower_bound_cost
 
         self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
-
+        self.printing = True
 
     def get_positional_dbs(self, circuit_db):
         """
@@ -58,8 +58,10 @@ class GateKiller:
             circuit_db, new_cost, killed = self.kill_one_unitary(first_cost, circuit_db)
             circuit_db = order_symbol_labels(circuit_db)
             # print("Killing, try {}/{}. Killed was {} now cost changes by: {}%".format(murder_attempt, number_of_gates, killed,(initial_cost-new_cost)/np.abs(initial_cost)))
-            if killed is False:
+            if killed == False:
                 break
+            if (self.printing == True) and (killed == True):
+                print("kill 1qbit gate, try {}/{}. Increased by: {}%".format(murder_attempt, number_of_gates, (initial_cost-new_cost)/np.abs(initial_cost)))
         return circuit_db, new_cost, murder_attempt
 
     def kill_one_unitary(self, initial_cost, circuit_db):

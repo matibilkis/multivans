@@ -6,7 +6,8 @@ import numpy as np
 # cores = mp.cpu_count()
 
 cores = 4
-js = np.linspace(0.,4.,8)
+#js = np.linspace(0.,4.,4)
+js = [.4]
 # js = list(range(1,8,1))
 def send_vans(itraj):
     #print(J)

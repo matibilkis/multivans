@@ -61,7 +61,7 @@ g,J = params
 shots = miscrun.convert_shorts(args.shots)
 epochs = args.epochs
 n_qubits = args.n_qubits
-learning_rate=1e-4
+learning_rate=1e-5
 tf.random.set_seed(args.itraj)
 np.random.seed(args.itraj)
 
@@ -72,13 +72,13 @@ minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = proble
 
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, g=g, J=J)
-inserter = idinserter.IdInserter(translator, noise_in_rotations=0.1)
+inserter = idinserter.IdInserter(translator, noise_in_rotations=np.pi/2)
 args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.nrun}
 evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_evaluator, lower_bound=translator.ground, nrun=args.itraj, stopping_criteria=1e-3, vans_its=args.vans_its)
 
 
 #### begin the algorithm
-circuit_db = translator.initialize(mode="x")
+circuit_db = translator.initialize(mode="u1")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
