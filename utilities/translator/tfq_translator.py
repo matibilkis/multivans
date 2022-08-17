@@ -28,6 +28,8 @@ class TFQTranslator:
         self.untouchable_blocks = untouchable_blocks
         self.discard_qubits = kwargs.get("discard_qubits",[]) ###these are the qubits that you don't measure, i.e. environment
 
+        self.noisy = kwargs.get("noisy",False)
+        self.noise_strength = kwargs.get("noise_strength",0.01)
 
         #### keep a register on which integers corresponds to which CNOTS, target or control.
         self.indexed_cnots = {}
@@ -127,6 +129,13 @@ class TFQTranslator:
             self.db = circuit_db.copy()
             self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
 
+        if self.noisy == True:
+            noisy_circuit = []
+            for k in list(circuit.all_operations()):
+                for q in k.qubits:
+                    noisy_circuit.append(cirq.depolarize(self.noise_strength).on(q))
+                noisy_circuit.append(k)
+            circuit = cirq.Circuit(noisy_circuit)
         return circuit, circuit_db
 
     def initialize(self,**kwargs):

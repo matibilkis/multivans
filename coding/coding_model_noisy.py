@@ -76,17 +76,19 @@ circuit, circuit_db = translator.give_circuit(translator.db_train)
 
 nois = circuit + cirq.Circuit(cirq.depolarize(.01).on_each(*circuit.all_qubits()))
 
-minimizer.variational(circuit_db, verbose=2)
+#minimizer.variational(circuit_db, verbose=2)
+
+noisy_circuit = []
+for k in list(circuit.all_operations()):
+    for q in k.qubits:
+        noisy_circuit.append(cirq.depolarize(0.01).on(q))
+    noisy_circuit.append(k)
+
+cirq.Circuit(noisy_circuit)
+k.qubits
 
 
-
-
-
-
-
-
-
-
+list(circuit.all_operations())[6].qubits
 
 
 

@@ -47,6 +47,8 @@ parser.add_argument("--shots", type=int, default=0)
 parser.add_argument("--epochs", type=int, default=5000)
 parser.add_argument("--vans_its", type=int, default=200)
 parser.add_argument("--itraj", type=int, default=1)
+parser.add_argument("--noise_strength", type=float, default=.01)
+
 
 args = parser.parse_args()
 
@@ -62,6 +64,7 @@ shots = miscrun.convert_shorts(args.shots)
 epochs = args.epochs
 n_qubits = args.n_qubits
 learning_rate=1e-6
+noise_strength
 tf.random.set_seed(args.itraj)
 np.random.seed(args.itraj)
 
