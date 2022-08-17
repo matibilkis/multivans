@@ -8,7 +8,10 @@ import numpy as np
 cores = 4
 # js = np.linspace(0.,2.,4)
 # js = [.4]
-js = np.linspace(0,.2,4)#list(range(1,8,1))
+#js = np.linspace(0,.2,4)#list(range(1,8,1))
+
+js = [0.0, 0.001, 0.01, 0.1]
+
 
 def send_vans(ns):
     print(ns)

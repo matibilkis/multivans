@@ -73,7 +73,7 @@ np.random.seed(args.itraj)
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = args.noise_strength)#, device_name="forest.numpy_wavefunction")
 
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength)#, device_name=translator.device_name)
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=15, max_time_training=600, verbose=0)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, g=g, J=J, patience=30, max_time_training=600, verbose=0)
 
 
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
@@ -111,7 +111,7 @@ for vans_it in range(evaluator.vans_its):
     evaluator.add_step(simplified_db, simplified_cost, relevant=False, operation="simplification", history = ns)
 
     minimized_db, [cost, resolver, history_training] = minimizer.variational(simplified_db, parameter_perturbation_wall=.1)
-    evaluator.add_step(minimized_db, cost, relevant=False, operation="variational", history = history_training.history["cost"])
+    evaluator.add_step(minimized_db, cost, relevant=False, operation="variational", history = history)
 
     previous_cost = evaluator.lowest_cost
     accept_cost, stop, circuit_db = evaluator.accept_cost(cost, minimized_db)
@@ -127,7 +127,7 @@ for vans_it in range(evaluator.vans_its):
         minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=1.)
         if progress is True:
             print("optimized (reducted) cost after optimization: {}\n".format(cost))
-        evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history_training.history["cost"])
+        evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history)
         circuit_db = minimized_db.copy()
     if stop == True:
         print("ending VAns")

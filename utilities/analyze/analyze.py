@@ -31,9 +31,10 @@ import ast
 from importlib import reload
 
 
+js = np.linspace(0,.2,4)#list(range(1,8,1))
 
-# args = {"problem":"TFIM", "params":"[1.,.1]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":True, "noise_strength":0.0}
-# args = miscrun.FakeArgs(args)
+args = {"problem":"TFIM", "params":"[1.,1.]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":True, "noise_strength":js[0]}
+args = miscrun.FakeArgs(args)
 problem = args.problem
 params = ast.literal_eval(args.params)
 g,J = params
@@ -63,9 +64,17 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_ev
 
 evaluator.load_dicts_and_displaying(evaluator.identifier)
 
+ells=[]
+c=0
+for k in list(evaluator.evolution.keys()):
+    info = evaluator.raw_history[k]
+    if info[-2] == "variational":
+        if c==0:
+            c=1
+        else:
+            ells +=list(info[-1])
 
-evaluator.raw_history.keys()
-
+plt.plot(ells)
 
 print(list(evaluator.raw_history[4][0]["symbol"]))
 circuit_db  = evaluator.raw_history[2][0]
