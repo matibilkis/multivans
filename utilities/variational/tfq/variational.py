@@ -31,6 +31,7 @@ class Minimizer:
             #self.optimizer = tf.keras.optimizers.Adam(learning_rate = self.lr)
             self.optimizer = tf.keras.optimizers.SGD(learning_rate = self.lr)
             self.minimization_step=0 #used for tensorboard
+            self.noisy = kwargs.get("noisy",False)
 
             if mode.upper() == "VQE":
                 hamiltonian = kwargs.get("hamiltonian")
@@ -78,18 +79,20 @@ class Minimizer:
         cc, cdb = self.translator.give_circuit(circuit_db, just_call=True)
         trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
 
-        model = self.model_class(symbols=trainable_symbols, observable=self.observable, batch_sizes=1)
+        model = self.model_class(symbols=trainable_symbols, observable=self.observable, batch_sizes=1, noisy=self.noisy)
 
         tfqcircuit = tfq.convert_to_tensor([cc])
         model(tfqcircuit) #this defines the weigths
+        if self.noisy == True:
+            trainable_param_values = np.array(trainable_param_values)[tf.newaxis]
         model.trainable_variables[0].assign(tf.convert_to_tensor(trainable_param_values.astype(np.float32)))
 
         model.compile(optimizer=self.optimizer, loss=self.loss)
         return self.loss(*[model(tfqcircuit)]*2)
 
 
-
     def give_cost_external_model(self, batched_circuit, model):
+        """I think i don0't use this, TODO!"""
         return self.loss(*[model(batched_circuit)]*2) ###useful for unitary killer
 
 
@@ -123,7 +126,7 @@ class Minimizer:
             batched_circuit = [cc]
 
             trainable_symbols, trainable_param_values = prepare_optimization_vqe(self.translator, cdb)
-            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values , parameter_perturbation_wall=parameter_perturbation_wall)
+            cost, resolver, training_history = self.minimize(batched_circuit, symbols = trainable_symbols, parameter_values = trainable_param_values , parameter_perturbation_wall=parameter_perturbation_wall, verbose=kwargs.get("verbose",0))
 
             optimized_circuit_db = database.update_circuit_db_param_values(self.translator,cdb, resolver)
             self.model.optimizer.lr.assign(self.initial_lr)
@@ -131,7 +134,7 @@ class Minimizer:
             return optimized_circuit_db, [cost, resolver, training_history]
 
 
-    def minimize(self, batched_circuits, symbols, parameter_values=None, parameter_perturbation_wall=1):
+    def minimize(self, batched_circuits, symbols, parameter_values=None, parameter_perturbation_wall=1, verbose=0):
         """
         batched_circuits:: list of cirq.Circuits (should NOT be resolved or with Sympy.Symbol)
         symbols:: list of strings containing symbols for each rotation
@@ -139,7 +142,7 @@ class Minimizer:
         parameter_perturbation_wall:: with some probability move away from the previously optimized parameters (different initial condition)
         """
         batch_size = len(batched_circuits)
-        self.model = self.model_class(symbols=symbols, observable=self.observable, batch_sizes=batch_size)
+        self.model = self.model_class(symbols=symbols, observable=self.observable, batch_sizes=batch_size, noisy=self.noisy)
 
         tfqcircuit = tfq.convert_to_tensor(batched_circuits)
         self.model(tfqcircuit) #this defines the weigths
@@ -147,13 +150,16 @@ class Minimizer:
 
         #in case we have already travelled the parameter space,
         if parameter_values is not None:
+            if self.noisy == True:
+                parameter_values = np.array(parameter_values)[tf.newaxis]
             self.model.trainable_variables[0].assign(tf.convert_to_tensor(parameter_values.astype(np.float32)))
-        else:
-            self.model.trainable_variables[0].assign(tf.convert_to_tensor(np.pi*4*np.random.randn(len(symbols)).astype(np.float32)))
+        # else:
+        #     self.model.trainable_variables[0].assign(tf.convert_to_tensor(np.pi*4*np.random.randn(len(symbols)).astype(np.float32)))
 
         if np.random.uniform() < parameter_perturbation_wall:
-            perturbation_strength = abs(np.random.normal(scale=0.1*np.max(np.abs(self.model.trainable_variables[0]))))
-            self.model.trainable_variables[0].assign(self.model.trainable_variables[0] + tf.convert_to_tensor(perturbation_strength*np.random.randn(len(symbols)).astype(np.float32)))
+            perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.model.trainable_variables[0]))))
+            random_tensor = tf.random.uniform(self.model.trainable_variables[0].shape)*self.model.trainable_variables[0]/10
+            self.model.trainable_variables[0].assign(self.model.trainable_variables[0] + random_tensor)
 
         calls=[tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0),TimedStopping(seconds=self.max_time_training)]
 
@@ -161,7 +167,7 @@ class Minimizer:
             self.minimization_step+=1 #this is because we call the module many times !
             calls.append(tf.keras.callbacks.TensorBoard(log_dir=self.tensorboarddata+"/logs/{}".format(self.minimization_step)))
 
-        training_history = self.model.fit(x=tfqcircuit, y=tf.zeros((batch_size,)),verbose=0, epochs=self.epochs, batch_size=batch_size, callbacks=calls)
+        training_history = self.model.fit(x=tfqcircuit, y=tf.zeros((batch_size,)),verbose=verbose, epochs=self.epochs, batch_size=batch_size, callbacks=calls)
 
         cost = self.model.cost_value.result()
         final_params = self.model.trainable_variables[0].numpy()
