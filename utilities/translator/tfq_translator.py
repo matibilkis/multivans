@@ -153,7 +153,10 @@ class TFQTranslator:
         qnode, circuit_db = self.give_circuit(circuit_db)
         return circuit_db
 
-
+    def draw(self, circuit_db):
+        from utilities.translator.pennylane_translator import PennyLaneTranslator
+        self.penny_translator = PennyLaneTranslator(self.n_qubits)
+        return self.penny_translator.draw(circuit_db)
 # class PennyLaneTranslator:
 #     def __init__(self, n_qubits, **kwargs):
 #         self.n_qubits = n_qubits

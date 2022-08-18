@@ -30,6 +30,7 @@ import argparse
 import ast
 from importlib import reload
 
+reload(tfq_translator)
 
 js = np.linspace(0,.2,4)#list(range(1,8,1))
 
@@ -66,7 +67,6 @@ evaluator.load_dicts_and_displaying(evaluator.identifier)
 
 evaluator.identifier
 
-
 ells=[]
 for k in list(evaluator.raw_history.keys()):
     info = evaluator.raw_history[k]
@@ -75,3 +75,13 @@ for k in list(evaluator.raw_history.keys()):
 
 plt.plot(ells)
 plt.plot(np.ones(len(ells))*evaluator.lower_bound,'--')
+
+
+dd = translator.draw(info[0])
+penny_circuit, db = translator.penny_translator.give_circuit(info[0])
+import pennylane as qml
+
+
+aa = penny_circuit.tape.to_openqasm()
+drawing = qml.draw(penny_circuit)(db, [])
+print(drawing)
