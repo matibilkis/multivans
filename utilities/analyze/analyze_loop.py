@@ -66,7 +66,7 @@ for ns in stre:
 [len(list(evs[n].evolution.keys())) for n in stre]
 
 
-plt.scatter(stre,[evs[n].evolution[list(evs[n].evolution.keys())[-1]][2] for n in stre])
+plt.scatter(stre,[evs[n].raw_hisstory[list(evs[n].raw_history.keys())[-1]][2] for n in stre])
 
 
 

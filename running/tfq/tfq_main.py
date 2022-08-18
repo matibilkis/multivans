@@ -83,7 +83,7 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_ev
 
 
 #### begin the algorithm
-circuit_db = translator.initialize(mode="hea-1")
+circuit_db = translator.initialize(mode="u1")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
@@ -123,7 +123,7 @@ for vans_it in range(evaluator.vans_its):
 
         if progress is True:
             print("minimizing, cost after reduction: {} circuit = {}\n".format(reduced_cost, database.describe_circuit(translator, reduced_db)))
-        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=.1)
+        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=1.)
         if progress is True:
             print("optimized (reducted) cost after optimization: {}\n".format(cost))
         evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history_training.history)
