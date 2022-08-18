@@ -157,6 +157,7 @@ class Minimizer:
         # else:
         #     self.model.trainable_variables[0].assign(tf.convert_to_tensor(np.pi*4*np.random.randn(len(symbols)).astype(np.float32)))
 
+        self.model.cost_value.update_state(self.model.compiled_loss(*[self.model(tfqcircuit)]*2))
         if np.random.uniform() < parameter_perturbation_wall:
             perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.model.trainable_variables[0]))))
             random_tensor = tf.random.uniform(self.model.trainable_variables[0].shape)*self.model.trainable_variables[0]/10
@@ -171,7 +172,7 @@ class Minimizer:
         training_history = self.model.fit(x=tfqcircuit, y=tf.zeros((batch_size,)),verbose=self.verbose, epochs=self.epochs, batch_size=batch_size, callbacks=calls)
 
         self.model.set_weights(calls[0].best_weights)
-        cost = self.model.compiled_loss(*[self.model(tfqcircuit)]*2) 
+        cost = self.model.compiled_loss(*[self.model(tfqcircuit)]*2)
         # cost = self.model.cost_value.result()
         final_params = self.model.trainable_variables[0].numpy()
         resolver = {"th_"+str(ind):var  for ind,var in enumerate(final_params)}

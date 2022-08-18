@@ -82,6 +82,7 @@ class QNN_VQE(tf.keras.Model):
         self.lr_value = Metrica(name="lr")
         self.gradient_norm = Metrica(name="grad_norm")
 
+
     def call(self, inputs):
         """
         inputs: tfq circuits (resolved or not, to train one has to feed unresolved).
@@ -109,7 +110,7 @@ class QNN_VQE(tf.keras.Model):
         self.cost_value.update_state(cost)
         self.lr_value.update_state(self.optimizer.lr)
 
-        return {k.name:k.result() for k in self.metrics}
+        return {k.name:k.variables[0] for k in self.metrics}
 
     def qacq_gradients(self, cost, grads, x):
         """
@@ -171,3 +172,6 @@ class Metrica(tf.keras.metrics.Metric):
 
     def result(self):
         return self.metric_variable
+
+    def reset_state(self):
+        self.metric_variable.assign(self.metric_variable)

@@ -88,20 +88,26 @@ class IdInserter:
         ngates = gate_counter_on_qubits(self,circuit_db, untouchable_qubits=self.untouchable_qubits)
         ngates_CNOT = ngates[:,1] ##number of CNOTs on each qubit
         qubits_not_CNOT = np.where(ngates_CNOT == 0)[0] ### target qubits are chosen later
-        if (self.spread_CNOTs is True) and (len(qubits_not_CNOT) == 0):
-            prob_rot_cnot = [.1,.9]
+
+        if (self.spread_CNOTs is True):
+            prot = .1#prob_rot_cnot = [p, 1-p]
         else:
-            prob_rot_cnot = [.5,.5]
+            prot = .5#[.5,.5]
 
         #### CHOOSE BLOCK #### 0--> rotation, 1 ---> CNOT
-        which_block = np.random.choice([0,1], p=prob_rot_cnot)#$which_prob(qubits_not_CNOT))
+        which_block = np.random.choice([0,1], p=[prot, 1-prot])#$which_prob(qubits_not_CNOT))
 
         if which_block == 0:
             gc=ngates[:,0]+1 #### gives the gate population for each qubit
             probs=np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc)))/np.sum(np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc))))
             qubits= np.random.choice(self.touchable_qubits,1,p=probs)
         else:
-            gc=ngates[:,1]+1 #### gives the gate population for each qubit
+            if len(qubits_not_CNOT) > 1:
+                self.choose_qubit_Temperature = 100
+            else:
+                self.choose_qubit_Temperature = 10
+
+            gc=ngates[:,1]+1 #### gives the gate population for each qubit (of CNOTs!)
             probs=np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc)))/np.sum(np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc))))
             qubits = np.random.choice(self.touchable_qubits,2,p=probs,replace=False)
 
