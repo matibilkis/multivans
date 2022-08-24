@@ -55,9 +55,8 @@ args = parser.parse_args()
 reload(miscrun)
 start = datetime.now()
 
-args = {"problem":"TFIM", "params":"[1.,.1]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":0, "noise_strength":0.0}
-args = miscrun.FakeArgs(args)
-
+# args = {"problem":"TFIM", "params":"[1.,.1]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":True, "noise_strength":0.0}
+# args = miscrun.FakeArgs(args)
 problem = args.problem
 params = ast.literal_eval(args.params)
 shots = miscrun.convert_shorts(args.shots)
@@ -79,36 +78,15 @@ minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = proble
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots)
 inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1)
-args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.nrun}
-evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_evaluator, lower_bound=translator.ground, nrun=args.itraj, stopping_criteria=1e-3, vans_its=args.vans_its)
+args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.itraj}
+evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its)
 
 
 #### begin the algorithm
-circuit_db = translator.initialize(mode="hea-1")
+circuit_db = translator.initialize(mode="u1")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
-
-minimizer.build_and_give_cost(circuit_db)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
-cost
-minimizer.build_and_give_cost(circuit_db)
-
-minimized_db, [cost, resolver, history] = minimizer.variational(minimized_db)
-
-first = history.history["cost"]
-
-second = history.history["cost"]
-
-plt.plot(first)
-
-
-dir(minimizer.model.metrics[0])
-
-minimizer.model.metrics[0].variables[0]
-minimizer.model.metrics[0].result()
-
-
-history.history["cost"]
 
 evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history.history)#$history_training.history["cost"])
 circuit, circuit_db = translator.give_circuit(minimized_db)
@@ -132,7 +110,7 @@ for vans_it in range(evaluator.vans_its):
     evaluator.add_step(simplified_db, simplified_cost, relevant=False, operation="simplification", history = ns)
 
     minimized_db, [cost, resolver, history_training] = minimizer.variational(simplified_db, parameter_perturbation_wall=1.)
-    evaluator.add_step(minimized_db, cost, relevant=False, operation="variational", history = history.history)
+    evaluator.add_step(minimized_db, cost, relevant=False, operation="variational", history = history_training.history)
 
     previous_cost = evaluator.lowest_cost
     accept_cost, stop, circuit_db = evaluator.accept_cost(cost, minimized_db)
@@ -145,10 +123,10 @@ for vans_it in range(evaluator.vans_its):
 
         if progress is True:
             print("minimizing, cost after reduction: {} circuit = {}\n".format(reduced_cost, database.describe_circuit(translator, reduced_db)))
-        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=.1)
+        minimized_db, [cost, resolver, history_training] = minimizer.variational(reduced_db,  parameter_perturbation_wall=1.)
         if progress is True:
             print("optimized (reducted) cost after optimization: {}\n".format(cost))
-        evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history.history)
+        evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history_training.history)
         circuit_db = minimized_db.copy()
     if stop == True:
         print("ending VAns")
