@@ -72,7 +72,7 @@ tf.random.set_seed(args.itraj)
 np.random.seed(args.itraj)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = args.noise_strength)#, device_name="forest.numpy_wavefunction")
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=int(10*3600), verbose=0, epochs=3)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=int(10*3600), verbose=0, epochs=1)
 
 circuit_db = database.concatenate_dbs([templates.hea_layer(translator)]*L_HEA)
 circuit, circuit_db = translator.give_circuit(circuit_db)
