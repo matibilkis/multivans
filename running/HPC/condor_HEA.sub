@@ -1,0 +1,11 @@
+executable=HPC/subash_HEA.sh
+
+output = ../vans_jobs/outs/HEA$(Item).out
+error = ../vans_jobs/errs/HEA$(Item).err
+log = ../vans_jobs/logs/HEA$(Item).log
+request_cpus = 10
+request_memory = 16 GB
++flavour="medium"
+
+args=$(Item)
+queue from seq 1 1 8|
