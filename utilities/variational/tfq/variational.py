@@ -218,6 +218,32 @@ class SaveBestModel(tf.keras.callbacks.Callback):
             self.best = metric_value
             self.best_weights= self.model.get_weights()
 
-
+def train_from_db(minimizer, prev_db, current_circuit, current_db, perturbation_strength=1e-3):
+    """
+    this function recycles weights obtained from training a smaller circuit (note there should be a sequential order.)
+    This is used for training HEA with L layers, then using the weights to train HEA with L+1 layers
+    """
+    trainable_symbols, trainable_param_values = prepare_optimization_vqe(minimizer.translator, current_db)
+    model = minimizer.model_class(symbols=trainable_symbols, observable=minimizer.observable, batch_sizes=1, noisy=minimizer.noisy)
+    tfqcircuit = tfq.convert_to_tensor([current_circuit])
+    model(tfqcircuit) #this defines the weigths
+    model.compile(optimizer=minimizer.optimizer, loss=minimizer.loss)
+    _, param_values_1 = prepare_optimization_vqe(minimizer.translator, prev_db)
+    previous_l_and_random = np.array(list(param_values_1) + list(np.random.random(np.squeeze(model.trainable_variables[0]).shape[0]- len(param_values_1))))
+    if minimizer.noisy == True:
+        previous_l_and_random = np.array(previous_l_and_random)[tf.newaxis]
+    model.trainable_variables[0].assign(tf.convert_to_tensor(previous_l_and_random.astype(np.float32)))
+    ##now i slighlty perturbate
+    random_tensor = tf.random.uniform(model.trainable_variables[0].shape)*model.trainable_variables[0]*perturbation_strength
+    model.trainable_variables[0].assign(model.trainable_variables[0] + random_tensor)
+    model.cost_value.update_state(model.compiled_loss(*[model(tfqcircuit)]*2))
+    calls=[SaveBestModel(),tf.keras.callbacks.EarlyStopping(monitor='cost', patience=minimizer.patience, mode="min", min_delta=0, restore_best_weights=True),TimedStopping(seconds=minimizer.max_time_training)]
+    training_history = model.fit(x=tfqcircuit, y=tf.zeros((1,)),verbose=minimizer.verbose, epochs=minimizer.epochs, batch_size=1, callbacks=calls)
+    model.set_weights(calls[0].best_weights)
+    cost = model.compiled_loss(*[model(tfqcircuit)]*2)
+    final_params = model.trainable_variables[0].numpy()
+    resolver = {"th_"+str(ind):var  for ind,var in enumerate(final_params)}
+    optimized_circuit_db = database.update_circuit_db_param_values(minimizer.translator,current_db, resolver)
+    return optimized_circuit_db, [cost, resolver, training_history]
 
 #

@@ -20,7 +20,8 @@ class GateKiller:
         self.test_translator = translator_test
         self.test_model = minimizer.Minimizer(translator,mode="VQE",hamiltonian=kwargs.get("hamiltonian","XXZ"),params=kwargs.get("params",[1.,.01]), lower_bound_cost=0., who="killer")
 
-        self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
+        #self.max_relative_increment = kwargs.get("max_relative_increment", 0.05)
+        self.accept_wall = kwargs.get("accept_wall", 1e5)
         self.printing = True
 
     def get_positional_dbs(self, circuit_db):
@@ -94,8 +95,10 @@ class GateKiller:
         if len(relative_increments) == 0:
             return circuit_db, initial_cost, False
 
-        if np.min(relative_increments) < self.max_relative_increment:
-            pos_min = np.argmin(relative_increments)
+        #if np.min(relative_increments) < self.max_relative_increment:
+        if self.accepting_criteria(initial_cost, np.min(killed_costs)) == True:
+            #pos_min = np.argmin(relative_increments)
+            pos_min = np.argmin(killed_costs)
             index_to_kill = candidates[pos_min]
             new_cost = killed_costs[pos_min]
 
@@ -106,3 +109,16 @@ class GateKiller:
             return killed_circuit_db, new_cost, True
         else:
             return circuit_db, initial_cost, False
+
+
+    def accepting_criteria(self, reference_cost, new_cost):
+        """
+        if decreases energy, we accept it;
+        otherwise exponentially decreasing probability of acceptance (the 100 is yet another a bit handcrafted)
+        """
+        #return  < 0.01
+        relative_error = (new_cost-reference_cost)/np.abs(reference_cost)
+        if new_cost <= reference_cost:
+            return True
+        else:
+            return np.random.random() < np.exp(-np.abs(relative_error)*self.accept_wall)

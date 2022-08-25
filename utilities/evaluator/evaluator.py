@@ -6,7 +6,7 @@ from datetime import datetime
 from utilities.evaluator.misc import get_def_path
 
 class PennyLaneEvaluator(PennyLaneTranslator):
-    def __init__(self,minimizer, args,
+    def __init__(self,minimizer, killer, args,
                 **kwargs):
         """
         This class evaluates the cost at each iteration, and decides whether to accept the new circuit or not.
@@ -25,6 +25,8 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         super(PennyLaneEvaluator, self).__init__(n_qubits=args["n_qubits"])
 
         self.minimizer = minimizer
+        self.killer = killer
+
         self.raw_history = {}
         self.evolution = {}
         self.displaying={"information":"\n VAns started at {} \n".format(datetime.now())}
@@ -43,7 +45,8 @@ class PennyLaneEvaluator(PennyLaneTranslator):
 
         self.lowest_acceptance_percentage = kwargs.get("lowest_acceptance_percentage", 1e-4)
         self.vans_its = kwargs.get("vans_its", 100)
-        self.acceptance_percentage = kwargs.get("self.acceptance_percentage", 1e-2)
+        self.acceptance_percentage = kwargs.get("acceptance_percentage", 1e-2)
+        self.get_back_after_its = kwargs.get("self.get_back_after_its",10)
         self.its_without_improving = 0
 
     def save_dicts_and_displaying(self):
@@ -84,14 +87,16 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         if accept == True:
             # print(accept, (C-self.lowest_cost)/np.abs(self.lowest_cost), C, self.lowest_cost)
             returned_db = circuit_db.copy()
+            self.acceptance_percentage*=0.9
+            self.killer.accept_wall=2/self.acceptance_percentage
         else:
-            if self.its_without_improving > 25:
+            if self.its_without_improving > self.get_back_after_its:
                 best_costs = [self.evolution[k][1] for k in range(len(list(self.evolution.keys())))]
                 indi_optimal = np.argmin(best_costs)
                 returned_db = self.evolution[indi_optimal][0]
                 print("getting back to {}w/ cost {}".format(indi_optimal, best_costs[indi_optimal]))
                 self.its_without_improving = 0
-                self.acceptange_percentage = 1e-3
+                #self.acceptange_percentage = max(1e-4self.initial_acceptange_percentage*(0.9**(len(self.evolution.keys())))
             else:
                 self.its_without_improving+=1
                 returned_db = circuit_db.copy()
@@ -120,7 +125,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
             # self.decrease_acceptance_range()
         else:
             self.its_without_improving+=1
-            # if self.its_without_improving > self.increase_acceptance_percentage_after_its:
+            # if self.its_without_improving > int(self.get_back_after_its/2):
             #     self.increase_acceptance_range()
 
         if self.lowest_cost <= self.lower_bound:
@@ -131,7 +136,16 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         self.save_dicts_and_displaying()
         return
 
-### things not used
+
+    def get_best_iteration(self):
+        """
+        returns minimum in evolution.
+        """
+        bests = list(np.where(np.array(list(self.evolution.values()))[:,1] == np.min(np.array(list(self.evolution.values()))[:,2]))[0])
+        if len([np.squeeze(bests)])==0:
+            return int(bests)
+        else:
+            return int(np.squeeze(bests[0]))
 
 # def decrease_acceptance_range(self):
 #     self.acceptance_percentage = max(self.lowest_acceptance_percentage, self.acceptance_percentage/self.acceptance_reduction_rate)

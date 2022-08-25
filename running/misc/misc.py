@@ -10,6 +10,8 @@ class FakeArgs:
         self.itraj = args["itraj"]
         self.noisy = args["noisy"]
         self.noise_strength = args["noise_strength"]
+        self.L_HEA = args["L_HEA"]
+        self.acceptange_percentage = args["acceptange_percentage"]
 def convert_shorts(x):
     if x==0:
         return None
