@@ -22,6 +22,8 @@ class IdInserter:
         self.initial_mutation_rate = kwargs.get("mutation_rate",1.5)
         self.prob_big = kwargs.get("prob_big",.1)
         self.p3body = kwargs.get("p3body",.1)
+        self.pu1 = kwargs.get("prot",.5)
+        self.initial_pu1 = kwargs.get("prot",.5)
         self.initial_prob_big = kwargs.get("prob_big",.1)
         self.initial_p3body = kwargs.get("p3body",.1)
         self.touchable_qubits = list(range(n_qubits))
@@ -69,10 +71,11 @@ class IdInserter:
         rxq1 = self.number_of_cnots + self.n_qubits + q1
         rxq2 = self.number_of_cnots + self.n_qubits + q2
         cnot = self.cnots_index[str([q1,q2])] #q1 control q2 target
-        if np.random.random() < self.prob_big:
-            return [cnot, rzq1, rxq1, rzq1, rxq2, rzq2, rxq2, cnot]
-        else:
+        if np.random.uniform() < self.prob_big:
             return [cnot, rxq1, rzq2, cnot]
+        else:
+            return [cnot, rzq1, rxq1, rzq1, rxq2, rzq2, rxq2, cnot]
+
 
     def resolution_3cnots(self, qubits):
         """
@@ -91,19 +94,16 @@ class IdInserter:
         rxq3 = self.number_of_cnots + self.n_qubits + q2
         cnot13 = self.cnots_index[str([q1,q3])] #q1 control q2 target
         cnot12 = self.cnots_index[str([q1,q2])] #q1 control q2 target
-        if np.random.random() < self.prob_big:
-            return [cnot13, rxq1, cnot12, rxq1, cnot12, rxq1, cnot13]
+        if np.random.uniform() < self.prob_big:
+            if np.random.uniform() < .5:
+                g = rxq1
+            else:
+                g = rzq1
+            return [cnot13, g, cnot12, g, cnot12, g, cnot13]
         else:
             return [cnot13, rxq1, rxq2, rxq3, cnot12, rxq1, rxq2, rxq3, cnot12, rxq1, rxq2, rxq3, cnot13]
 
-    def mutate(self, circuit_db, cost, lowest_cost, T_spread=1e3):
-
-        relative_energy = np.abs((cost - lowest_cost)/lowest_cost)
-        if relative_energy < 1e-1:
-           self.choose_qubit_Temperature = 1.
-        else:
-           self.choose_qubit_Temperature = T_spread
-
+    def mutate(self, circuit_db, cost, lowest_cost, T_spread=1e2):
         ngates = np.random.exponential(scale=self.mutation_rate)
         nmutations = int(ngates+1)
         m_circuit_db = self.inserter(circuit_db)
@@ -126,26 +126,20 @@ class IdInserter:
         ngates_CNOT = ngates[:,1] ##number of CNOTs on each qubit
         qubits_not_CNOT = np.where(ngates_CNOT == 0)[0] ### target qubits are chosen later
 
-        if (self.spread_CNOTs is True):
-            prot = .1#prob_rot_cnot = [p, 1-p]
-        else:
-            prot = .5#[.5,.5]
-
         #### CHOOSE BLOCK #### 0--> rotation, 1 ---> CNOT
-        which_block = np.random.choice([0,1,2], p=[prot, (1-self.p3body)*(1-prot), self.p3body*(1-prot)])#$which_prob(qubits_not_CNOT))
+        which_block = np.random.choice([0,1,2], p=[self.pu1, (1-self.p3body)*(1-self.pu1), self.p3body*(1-self.pu1)])#$which_prob(qubits_not_CNOT))
 
         if which_block == 0:
             gc=ngates[:,0]+1 #### gives the gate population for each qubit
-            probs=np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc)))/np.sum(np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc))))
+        else:
+            gc=ngates[:,1]+1 #### gives the gate population for each qubit
+        probs = (1/gc)/np.sum(1/gc)
+        T = self.choose_qubit_Temperature
+        probs = probs**T/np.sum(probs**T)
+
+        if which_block == 0:
             qubits= np.random.choice(self.touchable_qubits,1,p=probs)
         else:
-            if len(qubits_not_CNOT) > 1:
-                self.choose_qubit_Temperature = 20
-            else:
-                self.choose_qubit_Temperature = 10
-
-            gc=ngates[:,1]+1 #### gives the gate population for each qubit (of CNOTs!)
-            probs=np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc)))/np.sum(np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc))))
             qubits = np.random.choice(self.touchable_qubits,which_block+1,p=probs,replace=False)
 
         ### this gives the list of gates to insert
@@ -169,7 +163,7 @@ class IdInserter:
                 m_circuit_db = m_circuit_db.sort_index().reset_index(drop=True)
             else:
                 number_symbol_shifting = get_symbol_number_from(insertion_index+mind, m_circuit_db)
-                m_circuit_db.loc[insertion_index+0.1 + mind] = templates.gate_template(m_gate, param_value=2*np.pi*np.random.random()*self.noise_in_rotations,
+                m_circuit_db.loc[insertion_index+0.1 + mind] = templates.gate_template(m_gate, param_value=2*np.pi*np.random.uniform()*self.noise_in_rotations,
                                                                             symbol="th_"+str(number_symbol_shifting), block_id=which_circuit_block)
                 m_circuit_db = m_circuit_db.sort_index().reset_index(drop=True)
                 m_circuit_db = shift_symbols_up(self, insertion_index + mind, m_circuit_db)
