@@ -140,9 +140,11 @@ class TFQTranslator:
 
     def initialize(self,**kwargs):
         mode=kwargs.get("mode","x")
-        if mode=="x":
+        if mode.lower()=="x":
             circuit_db = templates.x_layer(self)
-        elif mode=="u1":
+        elif mode.lower()=="xz":
+            circuit_db = database.concatenate_dbs([templates.x_layer(self), templates.z_layer(self)])
+        elif mode.lower()=="u1":
             circuit_db = templates.u1_layer(self)
         elif mode[:-1].lower()=="hea-":
             circuit_db = database.concatenate_dbs([templates.hea_layer(self)]*int(mode[-1]))

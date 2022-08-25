@@ -160,7 +160,7 @@ class Minimizer:
         self.model.cost_value.update_state(self.model.compiled_loss(*[self.model(tfqcircuit)]*2))
         if np.random.uniform() < parameter_perturbation_wall:
             perturbation_strength = abs(np.random.normal(scale=np.max(np.abs(self.model.trainable_variables[0]))))
-            random_tensor = tf.random.uniform(self.model.trainable_variables[0].shape)*self.model.trainable_variables[0]/10
+            random_tensor = tf.random.uniform(self.model.trainable_variables[0].shape)*self.model.trainable_variables[0]/(np.random.random()*50)
             self.model.trainable_variables[0].assign(self.model.trainable_variables[0] + random_tensor)
 
         calls=[SaveBestModel(),tf.keras.callbacks.EarlyStopping(monitor='cost', patience=self.patience, mode="min", min_delta=0, restore_best_weights=True),TimedStopping(seconds=self.max_time_training)]

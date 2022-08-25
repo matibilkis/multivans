@@ -52,6 +52,7 @@ parser.add_argument("--noise_strength", type=float, default=.01)
 parser.add_argument("--noisy", type=int, default=0)
 parser.add_argument("--L_HEA", type=int, default=1)
 parser.add_argument("--acceptange_percentage", type=float, default=0.01)
+parser.add_argument("--run_name", type=str, default="")
 
 args = parser.parse_args()
 
@@ -78,12 +79,12 @@ np.random.seed(args.itraj)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength)#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength)
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=600, verbose=0)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=.9*3600, verbose=0)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, accept_wall = 2/args.acceptange_percentage)
-inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1)
-args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":-1}
-evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage)
+inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1, mutation_rate = 1.5)
+args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.itraj, "name":args.run_name}
+evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, inserter = inserter, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage, accuraccy_to_end=1e-5)
 
 
 costs = {}

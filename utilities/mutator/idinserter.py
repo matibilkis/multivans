@@ -18,7 +18,12 @@ class IdInserter:
         self.untouchable_blocks = kwargs.get("untouchable_blocks",[None])
         self.untouchable_qubits = kwargs.get("untouchable_qubits",[])
         self.noise_in_rotations=kwargs.get("noise_in_rotations",0.01)
-
+        self.mutation_rate = kwargs.get("mutation_rate",1.5)
+        self.initial_mutation_rate = kwargs.get("mutation_rate",1.5)
+        self.prob_big = kwargs.get("prob_big",.1)
+        self.p3body = kwargs.get("p3body",.1)
+        self.initial_prob_big = kwargs.get("prob_big",.1)
+        self.initial_p3body = kwargs.get("p3body",.1)
         self.touchable_qubits = list(range(n_qubits))
 
         for q in self.untouchable_qubits:
@@ -64,10 +69,42 @@ class IdInserter:
         rxq1 = self.number_of_cnots + self.n_qubits + q1
         rxq2 = self.number_of_cnots + self.n_qubits + q2
         cnot = self.cnots_index[str([q1,q2])] #q1 control q2 target
-        return [cnot, rzq1, rxq1, rzq1, rxq2, rzq2, rxq2, cnot]
+        if np.random.random() < self.prob_big:
+            return [cnot, rzq1, rxq1, rzq1, rxq2, rzq2, rxq2, cnot]
+        else:
+            return [cnot, rxq1, rzq2, cnot]
 
-    def mutate(self, circuit_db, mutation_rate=1):
-        ngates = np.random.exponential(scale=mutation_rate)
+    def resolution_3cnots(self, qubits):
+        """
+        sequence of integers describing a CNOT, then unitary (compiled close to identity, rz rx rz) and the same CNOT
+        q1: control qubit
+        q2: target qubit
+        """
+        q1, q2, q3 = qubits
+        if (q1==q2) or (q1==q3) or(q2==q3):
+            raise Error("SAME QUBIT!", qubits)
+        rzq1 = self.number_of_cnots + q1
+        rzq2 = self.number_of_cnots + q1
+        rzq3 = self.number_of_cnots + q2
+        rxq1 = self.number_of_cnots + self.n_qubits + q1
+        rxq2 = self.number_of_cnots + self.n_qubits + q1
+        rxq3 = self.number_of_cnots + self.n_qubits + q2
+        cnot13 = self.cnots_index[str([q1,q3])] #q1 control q2 target
+        cnot12 = self.cnots_index[str([q1,q2])] #q1 control q2 target
+        if np.random.random() < self.prob_big:
+            return [cnot13, rxq1, cnot12, rxq1, cnot12, rxq1, cnot13]
+        else:
+            return [cnot13, rxq1, rxq2, rxq3, cnot12, rxq1, rxq2, rxq3, cnot12, rxq1, rxq2, rxq3, cnot13]
+
+    def mutate(self, circuit_db, cost, lowest_cost, T_spread=1e3):
+
+        relative_energy = np.abs((cost - lowest_cost)/lowest_cost)
+        if relative_energy < 1e-1:
+           self.choose_qubit_Temperature = 1.
+        else:
+           self.choose_qubit_Temperature = T_spread
+
+        ngates = np.random.exponential(scale=self.mutation_rate)
         nmutations = int(ngates+1)
         m_circuit_db = self.inserter(circuit_db)
         for ll in range(nmutations-1):
@@ -95,7 +132,7 @@ class IdInserter:
             prot = .5#[.5,.5]
 
         #### CHOOSE BLOCK #### 0--> rotation, 1 ---> CNOT
-        which_block = np.random.choice([0,1], p=[prot, 1-prot])#$which_prob(qubits_not_CNOT))
+        which_block = np.random.choice([0,1,2], p=[prot, (1-self.p3body)*(1-prot), self.p3body*(1-prot)])#$which_prob(qubits_not_CNOT))
 
         if which_block == 0:
             gc=ngates[:,0]+1 #### gives the gate population for each qubit
@@ -103,16 +140,16 @@ class IdInserter:
             qubits= np.random.choice(self.touchable_qubits,1,p=probs)
         else:
             if len(qubits_not_CNOT) > 1:
-                self.choose_qubit_Temperature = 100
+                self.choose_qubit_Temperature = 20
             else:
                 self.choose_qubit_Temperature = 10
 
             gc=ngates[:,1]+1 #### gives the gate population for each qubit (of CNOTs!)
             probs=np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc)))/np.sum(np.exp(self.choose_qubit_Temperature*(1-gc/np.sum(gc))))
-            qubits = np.random.choice(self.touchable_qubits,2,p=probs,replace=False)
+            qubits = np.random.choice(self.touchable_qubits,which_block+1,p=probs,replace=False)
 
         ### this gives the list of gates to insert
-        block_of_gates = [self.resolution_1qubit, self.resolution_2cnots][which_block](qubits)
+        block_of_gates = [self.resolution_1qubit, self.resolution_2cnots, self.resolution_3cnots][which_block](qubits)
 
         ## position in the circuit to insert ?
         c1 = circuit_db[circuit_db["trainable"]==True]
