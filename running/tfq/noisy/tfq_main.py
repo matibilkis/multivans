@@ -84,7 +84,7 @@ translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits,
 minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=0.5*3600, verbose=0)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, accept_wall = 2/args.acceptange_percentage)
-inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1, mutation_rate = 1.5, prob_big=0.01, p3body=0.1)
+inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1, mutation_rate = 1.5, prob_big=0.01, p3body=0.1 ,pu1=0.5)
 args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.itraj, "name":args.run_name}
 evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, inserter = inserter, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage, accuraccy_to_end=1e-2)
 
