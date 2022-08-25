@@ -20,7 +20,7 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         *** path:
             get_def_path() or not
 
-        *** stopping criteria: relative error you will to accept.
+        *** stopping criteria: relative error you will to accept ---> notar this is accuracy to end now..
         """
         super(PennyLaneEvaluator, self).__init__(n_qubits=args["n_qubits"])
 
