@@ -8,18 +8,18 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
-num_threads = 1
-os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
-os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
-os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
 
-tf.config.threading.set_inter_op_parallelism_threads(
-    num_threads
-)
-tf.config.threading.set_intra_op_parallelism_threads(
-    num_threads
-)
-tf.config.set_soft_device_placement(True)
+tf.ConfigProto
+
+config = tf.ConfigProto(intra_op_parallelism_threads=1,
+                        inter_op_parallelism_threads=1,
+                        allow_soft_placement=True)
+
+session = tf.Session(config=config)
+
+
+tf.backend
+
 import tensorflow_quantum as tfq
 import cirq
 from datetime import datetime
