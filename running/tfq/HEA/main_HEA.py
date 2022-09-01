@@ -95,7 +95,7 @@ np.random.seed(args.itraj)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength)#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength)
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=.9*3600, verbose=0)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=.9*3600/ells, verbose=0)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, accept_wall = 2/args.acceptange_percentage)
 inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1, mutation_rate = 1.5)
@@ -113,7 +113,7 @@ minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
 costs[L] = cost
 evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
 
-for L in range(2,6):
+for L in range(2,5):
     print("L={}".format(L))
     dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
     circuit, dbs[L] = translator.give_circuit(dbs[L])

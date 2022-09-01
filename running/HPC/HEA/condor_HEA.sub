@@ -3,10 +3,10 @@ executable=running/HPC/HEA/subash_HEA.sh
 output = ../vans_jobs/outs/HEA$(Item).out
 error = ../vans_jobs/errs/HEA$(Item).err
 log = ../vans_jobs/logs/HEA$(Item).log
-request_cpus = 4
+request_cpus = 8
 request_memory = 8 GB
 requirements= Has_avx2 == true
 +flavour="short"
 
 args=$(Item)
-queue from seq 1 1 17|
+queue from seq 28 1 37|
