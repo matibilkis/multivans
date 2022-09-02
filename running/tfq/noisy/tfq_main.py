@@ -1,3 +1,9 @@
+import os
+
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -5,9 +11,22 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 import sys
-import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
+
+num_threads = 1
+os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
+os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
+os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
+
+tf.config.threading.set_inter_op_parallelism_threads(
+    num_threads
+)
+tf.config.threading.set_intra_op_parallelism_threads(
+    num_threads
+)
+tf.config.set_soft_device_placement(True)
+
 import tensorflow_quantum as tfq
 import cirq
 from datetime import datetime
