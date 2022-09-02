@@ -3,22 +3,23 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
-
 import sys
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
-tf.ConfigProto
 
-config = tf.ConfigProto(intra_op_parallelism_threads=1,
-                        inter_op_parallelism_threads=1,
-                        allow_soft_placement=True)
+num_threads = 1
+os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
+os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
+os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
 
-session = tf.Session(config=config)
-
-
-tf.backend
+tf.config.threading.set_inter_op_parallelism_threads(
+    num_threads
+)
+tf.config.threading.set_intra_op_parallelism_threads(
+    num_threads
+)
+tf.config.set_soft_device_placement(True)
 
 import tensorflow_quantum as tfq
 import cirq
@@ -28,6 +29,10 @@ sys.path.insert(0, os.getcwd())
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import pennylane as qml
+
+
+
+
 
 from tqdm import tqdm
 import utilities.translator.tfq_translator as tfq_translator

@@ -1,3 +1,9 @@
+import os
+
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -5,8 +11,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 import sys
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
 num_threads = 1
@@ -54,6 +59,7 @@ reload(tfq_minimizer)
 reload(tfq_translator)
 reload(penny_simplifier)
 
+print("parser")
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--problem", type=str, default="TFIM")
@@ -92,6 +98,8 @@ noisy = int_2_bool(args.noisy)
 tf.random.set_seed(args.itraj)
 np.random.seed(args.itraj)
 
+ells = 6
+print("defining")
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength)#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength)
@@ -106,13 +114,16 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=kille
 costs = {}
 dbs = {}
 minimized_db = {}
-L=1
+L=10
+print("concat")
 dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
+print("giving")
 circuit, dbs[L] = translator.give_circuit(dbs[L])
+print("minimizgin")
 minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
 costs[L] = cost
 evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
-
+print("miimized!")
 for L in range(2,5):
     print("L={}".format(L))
     dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
