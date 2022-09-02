@@ -5,8 +5,8 @@ error = ../vans_jobs/errs/HEA$(Item).err
 log = ../vans_jobs/logs/HEA$(Item).log
 request_cpus = 8
 request_memory = 8 GB
-requirements= Has_avx2 == true
-+flavour="short"
+requirements= Has_avx == true
++flavour="medium"
 
 args=$(Item)
-queue from seq 28 1 37|
+queue from seq 1 1 20|

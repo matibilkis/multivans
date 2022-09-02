@@ -11,8 +11,8 @@ parser.add_argument("--itraj", type=int, default=1)
 args = parser.parse_args()
 itraj = args.itraj
 
-cores = 4
-js = np.array([0] + list(np.logspace(-7,-2,3)))
+cores = 8
+js = list(np.logspace(-5,-4,8))
 
 def send_vans(ns):
     os.system("{} running/tfq/noisy/tfq_main.py --params '{}' --n_qubits 8 --problem TFIM --itraj {} --noisy 1 --noise_strength {} ".format(get_python(), str([1.0, 1.0]), itraj, ns))
