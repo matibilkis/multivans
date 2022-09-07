@@ -134,11 +134,46 @@ class TFQTranslator:
             self.db_train = self.db.copy() ### copy to be used in PennyLaneModel
 
         if self.noisy == True:
-            noisy_circuit = []
-            for k in list(circuit.all_operations()):
-                for q in k.qubits:
-                    noisy_circuit.append(cirq.depolarize(self.noise_strength).on(q))
-                noisy_circuit.append(k)
+            if self.noise_model == "noisy":
+
+                noisy_circuit = []
+                for k in list(circuit.all_operations()):
+                    for q in k.qubits:
+                        noisy_circuit.append(cirq.depolarize(self.noise_strength).on(q))
+                    noisy_circuit.append(k)
+            else:
+                noisy_circuit = []
+
+                ### State preparation error
+                for k in circuit.all_qubits():
+                    noisy_circuit.append(cirq.BitFlipChannel(p=self.noise_strength*1e-2).on(k))
+
+                ## Fig 2.b ArXiv 2101.02109 (AmplitudeDamping instead of reset channel)
+                for k in list(circuit.all_operations()):
+                    if len(k.qubits) == 1:
+                        depo_strength = self.noise_strength*1e-5
+                        for q in k.qubits:
+                            noisy_circuit.append(cirq.DepolarizingChannel(depo_strength*self.noise_strength).on(q))
+                            noisy_circuit.append(cirq.PhaseFlipChannel(self.noise_strength*1e-3).on(q))
+                            noisy_circuit.append(cirq.AmplitudeDampingChannel(self.noise_strength*1e-3).on(q))
+                    elif len(k.qubits) == 2:
+                        depo_strength = self.noise_strength*1e-5
+                        for ind,q in enumerate(k.qubits):
+                            if ind == 0:
+                                noisy_circuit.append(cirq.PhaseFlipChannel(self.noise_strength*1e-3).on(q))
+                                noisy_circuit.append(cirq.AmplitudeDampingChannel(self.noise_strength*1e-3).on(q))
+                            else: #depolarizing acting only on target
+                                noisy_circuit.append(cirq.DepolarizingChannel(depo_strength*self.noise_strength).on(q))
+                                noisy_circuit.append(cirq.PhaseFlipChannel(self.noise_strength*1e-3).on(q))
+                                noisy_circuit.append(cirq.AmplitudeDampingChannel(self.noise_strength*1e-3).on(q))
+                    else:
+                        raise ValueError("Three qubit gate??")
+                    noisy_circuit.append(k)
+
+                ### Measurement error
+                for k in circuit.all_qubits():
+                    noisy_circuit.append(cirq.BitFlipChannel(p=self.noise_strength*1e-2).on(k))
+
             circuit = cirq.Circuit(noisy_circuit)
         return circuit, circuit_db
 

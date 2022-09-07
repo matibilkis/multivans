@@ -81,8 +81,8 @@ args = parser.parse_args()
 # reload(miscrun)
 start = datetime.now()
 
-#args = {"problem":"TFIM", "params":"[1.,1.]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":True, "noise_strength":0.32, "acceptange_percentage": 0.01, "L_HEA":2, "run_name":"", "noise_model":"aer"}
-#args = miscrun.FakeArgs(args)
+args = {"problem":"TFIM", "params":"[1.,1.]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":True, "noise_strength":0.32, "acceptange_percentage": 0.01, "L_HEA":2, "run_name":"", "noise_model":"aer"}
+args = miscrun.FakeArgs(args)
 L_HEA = args.L_HEA
 problem = args.problem
 params = ast.literal_eval(args.params)
@@ -115,11 +115,23 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=kille
 costs = {}
 dbs = {}
 minimized_db = {}
-L=10
-print("concat")
+L=1
 dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
-print("giving")
 circuit, dbs[L] = translator.give_circuit(dbs[L])
+
+translator.give_circuit(templates.hea_layer(translator))
+
+
+
+
+minimizer.verbose=1
+minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
+
+
+
+
+
+
 print("minimizgin")
 minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
 costs[L] = cost

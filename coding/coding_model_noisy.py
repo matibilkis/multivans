@@ -74,6 +74,22 @@ minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = proble
 circuit_db = translator.initialize(mode="u2")
 circuit, circuit_db = translator.give_circuit(translator.db_train)
 
+db = pd.DataFrame([templates.gate_template(k) for k in range(translator.number_of_cnots)])
+
+circuit, db = translator.give_circuit(db)
+
+gate = list(circuit.all_operations())[1]
+gate.qubits
+gate.qubits
+
+
+
+
+
+for k in circuit.all_operations():
+    print(k)
+
+
 nois = circuit + cirq.Circuit(cirq.depolarize(.01).on_each(*circuit.all_qubits()))
 
 #minimizer.variational(circuit_db, verbose=2)

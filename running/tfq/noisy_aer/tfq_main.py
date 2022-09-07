@@ -26,9 +26,8 @@ tf.config.threading.set_intra_op_parallelism_threads(
     num_threads
 )
 tf.config.set_soft_device_placement(True)
+
 import tensorflow_quantum as tfq
-
-
 import cirq
 from datetime import datetime
 sys.path.insert(0, os.getcwd())
@@ -59,21 +58,20 @@ reload(tfq_minimizer)
 reload(tfq_translator)
 reload(penny_simplifier)
 
-print("parser")
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--problem", type=str, default="TFIM")
 parser.add_argument("--n_qubits", type=int, default=4)
-parser.add_argument("--params", type=str, default="[1., 1.1]")
+parser.add_argument("--params", type=str, default="[1., 1.]")
 parser.add_argument("--nrun", type=int, default=0)
 parser.add_argument("--shots", type=int, default=0)
-parser.add_argument("--epochs", type=int, default=5000)
-parser.add_argument("--vans_its", type=int, default=100)
+parser.add_argument("--epochs", type=int, default=2000)
+parser.add_argument("--vans_its", type=int, default=200)
 parser.add_argument("--itraj", type=int, default=1)
 parser.add_argument("--noise_strength", type=float, default=.01)
 parser.add_argument("--noisy", type=int, default=0)
 parser.add_argument("--L_HEA", type=int, default=1)
-parser.add_argument("--acceptange_percentage", type=float, default=0.01)
+parser.add_argument("--acceptange_percentage", type=float, default=1e-3)
 parser.add_argument("--run_name", type=str, default="")
 parser.add_argument("--noise_model", type=str, default="aer")
 args = parser.parse_args()
@@ -111,24 +109,52 @@ args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":par
 evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, inserter = inserter, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage, accuraccy_to_end=1e-2)
 
 
+#### begin the algorithm
+circuit_db = translator.initialize(mode="xz")
+circuit, circuit_db = translator.give_circuit(circuit_db)
+minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 
-costs = {}
-dbs = {}
-minimized_db = {}
-L=10
-print("concat")
-dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
-print("giving")
-circuit, dbs[L] = translator.give_circuit(dbs[L])
-print("minimizgin")
-minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
-costs[L] = cost
-evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
+evaluator.add_step(minimized_db, cost, relevant=True, operation="variational", history = history.history)
+circuit, circuit_db = translator.give_circuit(minimized_db)
 
-for L in range(2,ells+1):
-    print("L={}".format(L))
-    dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
-    circuit, dbs[L] = translator.give_circuit(dbs[L])
-    minimized_db[L], [cost, resolver, history] = tfq_minimizer.train_from_db(minimizer, dbs[L-1],circuit, dbs[L])
-    costs[L] = cost
-    evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
+
+
+progress = True
+for vans_it in range(evaluator.vans_its):
+    print("\n"*4 + "vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
+    print(translator.give_circuit(circuit_db,unresolved=False)[0], "\n","*"*30)
+
+    mutated_db, number_mutations = inserter.mutate(circuit_db, cost, evaluator.lowest_cost)
+    mutated_cost = minimizer.build_and_give_cost(mutated_db)
+
+    if progress is True:
+        print("mutated, new cost: {}, new circuit {}\n".format(mutated_cost, database.describe_circuit(translator,mutated_db)))
+
+    evaluator.add_step(mutated_db, mutated_cost, relevant=False, operation="mutation", history = number_mutations)
+    simplified_db, ns =  simplifier.reduce_circuit(mutated_db)
+    simplified_cost = minimizer.build_and_give_cost(simplified_db)
+    if progress is True:
+        print("simplifyed, new cost {}, new circuit {}\nminimizing..\n".format(simplified_cost, database.describe_circuit(translator,simplified_db)))
+    evaluator.add_step(simplified_db, simplified_cost, relevant=False, operation="simplification", history = ns)
+
+    minimized_db, [cost, resolver, history_training] = minimizer.variational(simplified_db, parameter_perturbation_wall=1.)
+    evaluator.add_step(minimized_db, cost, relevant=False, operation="variational", history = history_training.history)
+
+    previous_cost = evaluator.lowest_cost
+    accept_cost, stop, circuit_db = evaluator.accept_cost(cost, minimized_db)
+    if accept_cost == True:
+
+        if progress is True:
+            print("accepted!, {}, {}".format(cost, previous_cost)+"\nReducing\n")
+        reduced_db, reduced_cost, ops = simplification_misc.kill_and_simplify(circuit_db, cost, killer, simplifier)
+        evaluator.add_step(reduced_db, reduced_cost, relevant=True, operation="reduction", history = ops)
+        circuit_db = reduced_db.copy()
+
+    if stop == True:
+        print("ending VAns")
+        if evaluator.lower_bound == -np.inf:
+            print("Done, cost {}".format(cost) + "\n"*10)
+        else:
+            delta_cost = (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)
+            print("\n final cost: {}\ntarget cost: {}, relative error: {} \n Final circuit {}\n\n\n".format(cost, evaluator.lower_bound, delta_cost, database.describe_circuit(translator,circuit_db)))
+            break
