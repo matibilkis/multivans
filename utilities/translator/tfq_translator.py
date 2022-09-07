@@ -29,6 +29,10 @@ class TFQTranslator:
         self.discard_qubits = kwargs.get("discard_qubits",[]) ###these are the qubits that you don't measure, i.e. environment
 
         self.noisy = kwargs.get("noisy",False)
+        if self.noisy==True:
+            self.noise_model = kwargs.get("noise_model","noisy") ###
+            if self.noise_model.lower() == "depolarizing": ###just because i have data already in this regard
+                self.noise_model = "noisy"
         self.noise_strength = kwargs.get("noise_strength",0.01)
 
         #### keep a register on which integers corresponds to which CNOTS, target or control.

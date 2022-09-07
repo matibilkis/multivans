@@ -32,6 +32,8 @@ class Minimizer:
             self.optimizer = tf.keras.optimizers.SGD(learning_rate = self.lr)
             self.minimization_step=0 #used for tensorboard
             self.noisy = self.translator.noisy#kwargs.get("noisy",False)
+            self.noise_model = self.translator.noise_model#kwargs.get("noisy",False)
+
             self.verbose = kwargs.get("verbose",0)
 
             if mode.upper() == "VQE":

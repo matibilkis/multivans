@@ -39,9 +39,9 @@ class PennyLaneEvaluator(PennyLaneTranslator):
         self.args = args
         if minimizer.noisy == True:
             if args["name"] == "":
-                self.identifier =  get_def_path() + "noisy_{}_{}_Q{}/{}/{}/".format(minimizer.translator.noise_strength,args["problem"],args["n_qubits"],args["params"], args["nrun"])
+                self.identifier =  get_def_path() + "{}_{}_{}_Q{}/{}/{}/".format(minimizer.noise_model, minimizer.translator.noise_strength,args["problem"],args["n_qubits"],args["params"], args["nrun"])
             else:
-                self.identifier =  get_def_path() + "{}/noisy_{}_{}_Q{}/{}/{}/".format(args["name"], minimizer.translator.noise_strength,args["problem"],args["n_qubits"],args["params"], args["nrun"])
+                self.identifier =  get_def_path() + "{}/{}_{}_{}_Q{}/{}/{}/".format(args["name"],minimizer.noise_model, minimizer.translator.noise_strength,args["problem"],args["n_qubits"],args["params"], args["nrun"])
 
         else:
             if args["name"] == "":
