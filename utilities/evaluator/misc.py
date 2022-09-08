@@ -21,5 +21,7 @@ def get_python():
     user = getpass.getuser()
     if (user == "cooper-cooper") or (user == "mati"):
         return "python3.8"
+    elif user=="giq":
+        return "python3.9"
     else:
         return "python3"

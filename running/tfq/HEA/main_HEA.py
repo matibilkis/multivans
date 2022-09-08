@@ -83,7 +83,7 @@ start = datetime.now()
 
 #args = {"problem":"TFIM", "params":"[1.,1.]","nrun":0, "shots":0, "epochs":500, "n_qubits":4, "vans_its":200,"itraj":1, "noisy":True, "noise_strength":0.32, "acceptange_percentage": 0.01, "L_HEA":2, "run_name":"", "noise_model":"aer"}
 #args = miscrun.FakeArgs(args)
-L_HEA = args.L_HEA
+ells = L_HEA = args.L_HEA
 problem = args.problem
 params = ast.literal_eval(args.params)
 shots = miscrun.convert_shorts(args.shots)
@@ -103,7 +103,7 @@ reload(idinserter)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength, noise_model=args.noise_model)#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength, noise_model=args.noise_model)
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=0.5*3600, verbose=0)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=3600, verbose=1)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, accept_wall = 2/args.acceptange_percentage)
 inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1, mutation_rate = 1.5, prob_big=0.01, p3body=0.1 ,pu1=0.5)
@@ -111,16 +111,12 @@ args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":par
 evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, inserter = inserter, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage, accuraccy_to_end=1e-2)
 
 
-
 costs = {}
 dbs = {}
 minimized_db = {}
-L=10
-print("concat")
+L=1
 dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
-print("giving")
 circuit, dbs[L] = translator.give_circuit(dbs[L])
-print("minimizgin")
 minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
 costs[L] = cost
 evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])

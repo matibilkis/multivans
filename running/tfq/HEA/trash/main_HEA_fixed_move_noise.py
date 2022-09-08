@@ -103,13 +103,12 @@ reload(idinserter)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength, noise_model=args.noise_model)#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength, noise_model=args.noise_model)
-minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=0.5*3600, verbose=0)
+minimizer = tfq_minimizer.Minimizer(translator, mode="VQE", hamiltonian = problem, params = params, lr=learning_rate, shots=shots, patience=30, max_time_training=3600, verbose=0)
 simplifier = penny_simplifier.PennyLane_Simplifier(translator)
 killer = tfq_killer.GateKiller(translator, translator_killer, hamiltonian=problem, params=params, lr=learning_rate, shots=shots, accept_wall = 2/args.acceptange_percentage)
 inserter = idinserter.IdInserter(translator, noise_in_rotations=1e-1, mutation_rate = 1.5, prob_big=0.01, p3body=0.1 ,pu1=0.5)
 args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":params,"nrun":args.itraj, "name":args.run_name}
 evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, inserter = inserter, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage, accuraccy_to_end=1e-2)
-
 
 
 costs = {}
@@ -119,28 +118,14 @@ L=1
 dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
 circuit, dbs[L] = translator.give_circuit(dbs[L])
 
-translator.give_circuit(templates.hea_layer(translator))
-
-
-
-
-minimizer.verbose=1
-minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
-
-
-
-
-
-
-print("minimizgin")
 minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
 costs[L] = cost
 evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
-
-for L in range(2,ells+1):
-    print("L={}".format(L))
-    dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
-    circuit, dbs[L] = translator.give_circuit(dbs[L])
-    minimized_db[L], [cost, resolver, history] = tfq_minimizer.train_from_db(minimizer, dbs[L-1],circuit, dbs[L])
-    costs[L] = cost
-    evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
+#
+# for L in range(2,ells+1):
+#     print("L={}".format(L))
+#     dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
+#     circuit, dbs[L] = translator.give_circuit(dbs[L])
+#     minimized_db[L], [cost, resolver, history] = tfq_minimizer.train_from_db(minimizer, dbs[L-1],circuit, dbs[L])
+#     costs[L] = cost
+#     evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
