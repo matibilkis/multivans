@@ -1,0 +1,12 @@
+executable=running/HPC/HEA/subash_HEA.sh
+
+output = ../vans_jobs/outs/fHEA$(Item).out
+error = ../vans_jobs/errs/fHEA$(Item).err
+log = ../vans_jobs/logs/fHEA$(Item).log
+request_cpus = 20
+request_memory = 20 GB
+requirements= Has_avx == true
++flavour="short"
+
+args=$(Item)
+queue from seq 1 1 1|
