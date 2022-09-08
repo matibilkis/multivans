@@ -14,10 +14,11 @@ args = parser.parse_args()
 itraj = args.itraj
 
 cores = 20
-js = list(np.logspace(-6,-2,20))
+js = list(np.logspace(-4,-2.5,20))
 
 def send_vans(ns):
-    os.system("{} running/tfq/HEA/main_HEA.py --params '{}' --L_HEA 1 --noise_strength {} --noisy 1 --itraj {}".format(get_python(),str([1.0, 1.0]), ns, itraj))
+    for k in range(50):
+        os.system("{} running/tfq/HEA/main_HEA.py --params '{}' --L_HEA 3 --noise_strength {} --noisy 1 --itraj {} --run_name HEA_fixed".format(get_python(),str([1.0, 1.0]), ns, itraj+k))
 
 with mp.Pool(cores) as p:
     p.map(send_vans, js)

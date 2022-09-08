@@ -1,9 +1,11 @@
 import os
-
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-
+import getpass
+giq = getpass.getuser() == "giq"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+if giq != True:
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["NUMEXPR_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -11,21 +13,23 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 import sys
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+if giq != True:
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
-num_threads = 1
-os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
-os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
-os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
+if giq != True:
+    num_threads = 1
+    os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
+    os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
+    os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
 
-tf.config.threading.set_inter_op_parallelism_threads(
-    num_threads
-)
-tf.config.threading.set_intra_op_parallelism_threads(
-    num_threads
-)
-tf.config.set_soft_device_placement(True)
+    tf.config.threading.set_inter_op_parallelism_threads(
+        num_threads
+    )
+    tf.config.threading.set_intra_op_parallelism_threads(
+        num_threads
+    )
+    tf.config.set_soft_device_placement(True)
 import tensorflow_quantum as tfq
 
 
@@ -97,9 +101,6 @@ noisy = int_2_bool(args.noisy)
 tf.random.set_seed(abs(args.itraj))
 np.random.seed(abs(args.itraj))
 
-args.noise_model
-
-reload(idinserter)
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength, noise_model=args.noise_model)#, device_name="forest.numpy_wavefunction")
 translator_killer = tfq_translator.TFQTranslator(n_qubits = translator.n_qubits, initialize="x", noisy=translator.noisy, noise_strength = args.noise_strength, noise_model=args.noise_model)
