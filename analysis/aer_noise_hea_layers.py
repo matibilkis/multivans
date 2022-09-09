@@ -70,51 +70,47 @@ def load_ev_HEA(ns, itraj=1):
     return evaluator
 
 
-js = list(np.logspace(-4,-2.5,20))
+js = list(np.logspace(-3.7,-2.9,16))
 
+
+evo = load_ev_HEA(js[0], itraj=1)
 
 
 costj = {}
 jj=[]
-lens=[]
+lens={}
 ers=[]
 for j in js:
-    costj[j] = []
-    for i in range(30):
+    costj[j] = {k:[] for k in range(3)}
+    lens[j] = {k:[] for k in range(3)}
 
+    for i in range(50):
         try:
             evo = load_ev_HEA(j, itraj=i)
-            costj[j].append(evo.evolution[evo.get_best_iteration()][1])
-            lens.append(len(evo.evolution[0][-1]["cost"]))
+            for k in range(3):
+                costj[j][k].append(evo.evolution[k][1])
+                lens[j][k] = len(costj[j][k])
 
         except Exception:
             pass
 
-opt = {}
-for k,v in costj.items():
-    if len(v) == 0:
-        pass
-    else:
-        opt[k] = np.min(v)
+lens
+
+opt = {j:[] for j in js}
+for k, j in enumerate(js):
+    for l in range(3):
+        opt[j].append(np.min(costj[j][l]))
 
 evo.minimizer.noisy=False
-
-counts, bins = np.histogram(lens, bins=50)
-
-np.max(counts)
-plt.plot(bins[:-1], counts)
-
 ground = tfq_minimizer.compute_lower_bound_cost_vqe(evo.minimizer)
 
-
+opts = np.array(list(opt.values()))
+colors=["yellow","blue","red"]
 ax=plt.subplot()
-ax.plot(opt.keys(), opt.values(),'.')
+for k in range(3):
+    ax.scatter(opt.keys(), opts[:,k],s=200,alpha=0.7, color=colors[k], label="HEA-{}".format(k+1))
 ax.plot(opt.keys(), ground*np.ones(len(opt.keys())),'--',color="black",label="ground")
 ax.legend()
 ax.set_xscale("log")
 ax.set_xlabel(r'$\lambda$',size=20)
-ax.set_ylabel(r'$E_{HEA-1}$',size=20)
-
-
-np.log10(js[3])
-np.log10(js[-6])
+ax.set_ylabel(r'$E_{HEA}$',size=20)

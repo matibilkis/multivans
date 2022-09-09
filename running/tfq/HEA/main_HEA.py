@@ -75,6 +75,7 @@ parser.add_argument("--epochs", type=int, default=5000)
 parser.add_argument("--vans_its", type=int, default=100)
 parser.add_argument("--itraj", type=int, default=1)
 parser.add_argument("--noise_strength", type=float, default=.01)
+parser.add_argument("--lr", type=float, default=.01)
 parser.add_argument("--noisy", type=int, default=0)
 parser.add_argument("--L_HEA", type=int, default=1)
 parser.add_argument("--acceptange_percentage", type=float, default=0.01)
@@ -93,7 +94,7 @@ params = ast.literal_eval(args.params)
 shots = miscrun.convert_shorts(args.shots)
 epochs = args.epochs
 n_qubits = args.n_qubits
-learning_rate=1e-2
+learning_rate=args.lr
 acceptange_percentage = args.acceptange_percentage
 noise_strength = args.noise_strength
 int_2_bool = lambda x: True if x==1 else False
