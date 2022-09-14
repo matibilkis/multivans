@@ -1,9 +1,11 @@
 import os
-
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-
+import getpass
+giq = getpass.getuser() == "giq"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+if giq != True:
+    os.environ["MKL_NUM_THREADS"] = "1"
+    os.environ["NUMEXPR_NUM_THREADS"] = "1"
+    os.environ["OMP_NUM_THREADS"] = "1"
 import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -11,23 +13,26 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 import sys
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+if giq != True:
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 
-num_threads = 1
-os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
-os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
-os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
+if giq != True:
+    num_threads = 1
+    os.environ["OMP_NUM_THREADS"] = "{}".format(num_threads)
+    os.environ["TF_NUM_INTRAOP_THREADS"] = "{}".format(num_threads)
+    os.environ["TF_NUM_INTEROP_THREADS"] = "{}".format(num_threads)
 
-tf.config.threading.set_inter_op_parallelism_threads(
-    num_threads
-)
-tf.config.threading.set_intra_op_parallelism_threads(
-    num_threads
-)
-tf.config.set_soft_device_placement(True)
-
+    tf.config.threading.set_inter_op_parallelism_threads(
+        num_threads
+    )
+    tf.config.threading.set_intra_op_parallelism_threads(
+        num_threads
+    )
+    tf.config.set_soft_device_placement(True)
 import tensorflow_quantum as tfq
+
+
 import cirq
 from datetime import datetime
 sys.path.insert(0, os.getcwd())
@@ -50,6 +55,8 @@ import running.misc.misc as miscrun
 import argparse
 import ast
 from importlib import reload
+
+
 
 
 # #
@@ -119,9 +126,9 @@ circuit, circuit_db = translator.give_circuit(minimized_db)
 
 
 
-progress = True
+progress = False
 for vans_it in range(evaluator.vans_its):
-    print("\n"*4 + "vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
+    print("\n"*4 + "problem: {}_ {}-{}Qbits\n noise: {}_{}\n".format(problem,params, args.n_qubits,args.noise_model, noise_strength) +"vans_it: {}\n Time since beggining: {} sec\ncurrent cost: {}\ntarget cost: {} \nrelative error: {}\n\n\n".format(vans_it, (datetime.now()-start).seconds, cost, evaluator.lower_bound, (cost-evaluator.lower_bound)/abs(evaluator.lower_bound)))
     print(translator.give_circuit(circuit_db,unresolved=False)[0], "\n","*"*30)
 
     mutated_db, number_mutations = inserter.mutate(circuit_db, cost, evaluator.lowest_cost)
