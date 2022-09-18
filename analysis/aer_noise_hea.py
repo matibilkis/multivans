@@ -97,6 +97,9 @@ for k,v in costj.items():
     else:
         opt[k] = np.min(v)
 
+
+opt
+
 evo.minimizer.noisy=False
 
 counts, bins = np.histogram(lens, bins=50)
@@ -106,15 +109,14 @@ plt.plot(bins[:-1], counts)
 
 ground = tfq_minimizer.compute_lower_bound_cost_vqe(evo.minimizer)
 
+ground
 
 ax=plt.subplot()
 ax.plot(opt.keys(), opt.values(),'.')
 ax.plot(opt.keys(), ground*np.ones(len(opt.keys())),'--',color="black",label="ground")
+ax.plot(opt.keys(), -5.09*np.ones(len(opt.keys())),'--',color="red",label="HEA-1-noiseless")
+
 ax.legend()
 ax.set_xscale("log")
 ax.set_xlabel(r'$\lambda$',size=20)
 ax.set_ylabel(r'$E_{HEA-1}$',size=20)
-
-
-np.log10(js[3])
-np.log10(js[-6])

@@ -18,7 +18,7 @@ js = list(np.logspace(-3.7,-2.9,16))[:5]
 
 def send_vans(ns):
     for k in range(50,100):
-        os.system("{} running/tfq/HEA/main_HEA.py --params '{}' --lr 0.001 --L_HEA 3 --noise_strength {} --noisy 1 --itraj {} --run_name HEA_fixed".format(get_python(),str([1.0, 1.0]), ns, itraj+k))
+        os.system("{} running/tfq/HEA/main_HEA.py --params '{}' --lr 0.001 --L_HEA 1 --noise_strength {} --noisy 1 --itraj {} --run_name HEA_fixed".format(get_python(),str([1.0, 1.0]), ns, itraj+k))
 
 with mp.Pool(cores) as p:
     p.map(send_vans, js)
