@@ -184,13 +184,12 @@ def load_ev_HEA(ns, itraj=1,NQ=8, name=""):
 js = list(np.logspace(-8,-5,16))
 
 
-evo = load_ev_HEA(js[0], itraj=51)
 
-
-evo = load_ev_HEA(j, itraj=1)
-
+evo = load_ev_HEA(js[0], itraj=1)
 evo.minimizer.translator.noisy=False
-evo.minimizer.translator.give_circuit(evo.evolution[0][0])[0]
+
+
+js = list(np.logspace(-5,-3,16))
 
 
 costj = {}
@@ -201,7 +200,7 @@ for j in js:
     costj[j] = {k:[] for k in range(3)}
     lens[j] = {k:[] for k in range(3)}
 
-    for i in range(60):
+    for i in range(10):
         try:
             evo = load_ev_HEA(j, itraj=i)
             for k in range(3):
@@ -211,14 +210,18 @@ for j in js:
         except Exception:
             pass
 
-lens
-
-opt
-
 opt = {j:[] for j in js}
 for k, j in enumerate(js):
-    for l in range(3):
+    for l in range(1):
         opt[j].append(np.min(costj[j][l]))
+
+evo.minimizer.noisy=False
+ground = tfq_minimizer.compute_lower_bound_cost_vqe(evo.minimizer)
+
+ax=plt.subplot()
+ax.plot(js,np.squeeze(list(opt.values())))
+ax.plot(js,np.ones(len(js))*ground,'--')
+ax.set_xscale("log")
 
 
 cost_vans={j:[] for j in js}
