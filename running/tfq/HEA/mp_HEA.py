@@ -12,7 +12,7 @@ parser.add_argument("--itraj", type=int, default=1)
 args = parser.parse_args()
 itraj = args.itraj
 
-ncores = 16
+ncores = 8
 js = list(np.logspace(-5,-3,ncores))
 
 def send_vans(ns):
