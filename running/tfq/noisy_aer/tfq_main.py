@@ -118,6 +118,8 @@ evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=kille
 
 #### begin the algorithm
 circuit_db = translator.initialize(mode="xz")
+circuit_db = database.concatenate_dbs([templates.hea_layer(translator)]*1)
+
 circuit, circuit_db = translator.give_circuit(circuit_db)
 minimized_db, [cost, resolver, history] = minimizer.variational(circuit_db)
 

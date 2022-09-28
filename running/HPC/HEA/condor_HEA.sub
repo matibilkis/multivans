@@ -4,9 +4,9 @@ output = ../vans_jobs/outs/L18HEA$(Item).out
 error = ../vans_jobs/errs/L18HEA$(Item).err
 log = ../vans_jobs/logs/L18HEA$(Item).log
 request_cpus = 8
-request_memory = 8 GB
+request_memory = 12 GB
 requirements= Has_avx == true
-+flavour="short"
++flavour="medium"
 
 args=$(Item)
-queue from seq 2 1 25|
+queue from seq 26 1 50|

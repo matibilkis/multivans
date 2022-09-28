@@ -81,6 +81,8 @@ parser.add_argument("--L_HEA", type=int, default=1)
 parser.add_argument("--acceptange_percentage", type=float, default=0.01)
 parser.add_argument("--run_name", type=str, default="")
 parser.add_argument("--noise_model", type=str, default="aer")
+parser.add_argument("--fromm", type=int, default=0)
+
 args = parser.parse_args()
 
 # reload(miscrun)
@@ -101,6 +103,7 @@ int_2_bool = lambda x: True if x==1 else False
 noisy = int_2_bool(args.noisy)
 tf.random.set_seed(abs(args.itraj))
 np.random.seed(abs(args.itraj))
+fromm = args.fromm
 
 
 translator = tfq_translator.TFQTranslator(n_qubits = n_qubits, initialize="x", noisy=args.noisy, noise_strength = noise_strength, noise_model=args.noise_model)#, device_name="forest.numpy_wavefunction")
@@ -113,16 +116,26 @@ args_evaluator = {"n_qubits":translator.n_qubits, "problem":problem,"params":par
 evaluator = tfq_evaluator.PennyLaneEvaluator(minimizer = minimizer, killer=killer, inserter = inserter, args=args_evaluator, lower_bound=translator.ground, stopping_criteria=1e-3, vans_its=args.vans_its, acceptange_percentage = acceptange_percentage, accuraccy_to_end=1e-2)
 
 
+load_one = False
 costs = {}
 dbs = {}
 minimized_db = {}
 L=1
 dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)
 circuit, dbs[L] = translator.give_circuit(dbs[L])
-minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
-costs[L] = cost
-evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
+if load_one == False:
 
+    minimized_db[L], [cost, resolver, history] = minimizer.variational(dbs[L])
+else:
+## load first (optimized) gatedb
+    evaluator.load_dicts_and_displaying(evaluator.identifier)
+    minimized_db[L] = evaluator.evolution[0][0]
+    cost, history = evaluator.evolution[0][1], evaluator.evolution[0][-1]
+
+costs[L] = cost
+#evaluator.add_step(minimized_db[L], costs[L], relevant=True, operation="HEA{}".format(L), history = history.history)#$history_training.history["cost"])
+
+print("loaded OK!")
 for L in range(2,ells+1):
     print("L={}".format(L))
     dbs[L] = database.concatenate_dbs([templates.hea_layer(translator)]*L)

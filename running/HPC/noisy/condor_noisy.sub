@@ -1,12 +1,12 @@
 executable=running/HPC/noisy/subash_noisy.sh
 
-output = ../vans_jobs/outs/noisy$(Item).out
-error = ../vans_jobs/errs/noisy$(Item).err
-log = ../vans_jobs/logs/noisy$(Item).log
+output = ../vans_jobs/outs/VANS$(Item).out
+error = ../vans_jobs/errs/VANS$(Item).err
+log = ../vans_jobs/logs/VANS$(Item).log
 request_cpus = 8
-request_memory = 8 GB
+request_memory = 12 GB
 requirements= Has_avx == true
 +flavour="medium"
 
 args=$(Item)
-queue from seq 1 1 20|
+queue from seq 50 50 1|

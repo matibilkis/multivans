@@ -15,7 +15,7 @@ ncores = 8
 js = list(np.logspace(-5,-3,ncores))
 
 def send_vans(ns):
-    for itraj in range(25):
+    for itraj in range(25,50):
         os.system("{} running/tfq/noisy_aer/tfq_main.py --params '{}' --n_qubits 8 --problem TFIM --itraj {} --noisy 1 --noise_strength {} --run_name VANS --vans_its 150".format(get_python(), str([1.0, 1.0]), itraj, ns))
 
 with mp.Pool(ncores) as p:

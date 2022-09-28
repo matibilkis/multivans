@@ -16,7 +16,7 @@ ncores = 8
 js = list(np.logspace(-5,-3,ncores))
 
 def send_vans(ns):
-    os.system("{} running/tfq/HEA/main_HEA.py --params '{}' --n_qubits 8 --lr 0.001 --L_HEA 1 --noise_strength {} --noisy 1 --itraj {} --run_name HEA_fixed".format(get_python(),str([1.0, 1.0]), ns, itraj))
+    os.system("{} running/tfq/HEA/main_HEA.py --params '{}' --n_qubits 8 --lr 0.001 --L_HEA 3 --noise_strength {} --noisy 1 --itraj {} --run_name HEA_fixed".format(get_python(),str([1.0, 1.0]), ns, itraj))
 
 with mp.Pool(ncores) as p:
     p.map(send_vans, js)
