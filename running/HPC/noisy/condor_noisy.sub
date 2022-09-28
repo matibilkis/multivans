@@ -9,4 +9,4 @@ requirements= Has_avx == true
 +flavour="medium"
 
 args=$(Item)
-queue from seq 50 50 1|
+queue from seq 49 50 1|
