@@ -3,7 +3,7 @@ itraj=$1
 cd ~/multivans
 . ~/vans_env/bin/activate
 START=$(date +%s.%N)
-python3 running/tfq/noisy/mp_run.py --itraj $itraj
+python3 running/tfq/noisy_aer/mp_vans.py --itraj $itraj
 END=$(date +%s.%N)
 DIFF=$(echo "$END - $START" | bc)
 echo $DIFF

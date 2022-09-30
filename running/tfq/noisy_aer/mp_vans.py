@@ -11,12 +11,11 @@ parser.add_argument("--itraj", type=int, default=1)
 args = parser.parse_args()
 itraj = args.itraj
 
-ncores = 8
-js = list(np.logspace(-5,-3,ncores))
+ncores = 4
+js = list(np.logspace(-5,-3,8))[:4]
 
 def send_vans(ns):
-    for itraj in range(8):
-        os.system("{} running/tfq/noisy_aer/tfq_main.py --params '{}' --n_qubits 8 --problem TFIM --itraj {} --noisy 1 --noise_strength {} --run_name VANS --vans_its 50".format(get_python(), str([1.0, 1.0]), itraj, ns))
+    os.system("{} running/tfq/noisy_aer/tfq_main.py --params '{}' --n_qubits 8 --problem TFIM --itraj {} --noisy 1 --noise_strength {} --run_name VANS --vans_its 50".format(get_python(), str([1.0, 1.0]), itraj, ns))
 
 with mp.Pool(ncores) as p:
     p.map(send_vans, js)
